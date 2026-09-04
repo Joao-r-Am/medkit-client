@@ -1,0 +1,15 @@
+# https://pnpm.io/settings
+
+allowBuilds:
+  "@parcel/watcher": true
+  core-js: true
+  electron-winstaller: true
+  esbuild: true
+  lightningcss: true
+  rolldown: true
+  unrs-resolver: true
+
+# Garante uma única instância de vue-router no grafo (evita conflito de tipos
+# entre o createRouter do app e o defineRouter do #q-app).
+overrides:
+  vue-router: "^5.2.0"

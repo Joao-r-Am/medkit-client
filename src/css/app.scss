@@ -1,0 +1,201 @@
+// app global css
+@import "./fonts";
+
+// Paleta da identidade visual (equivalente ao @theme do Tailwind do medkit-cli)
+:root {
+  --app-dark: #2a1a1a;
+  --app-green: #4e6e5d;
+  --app-brown: #562c2c;
+  --app-muted: #6b665f;
+  --app-soft: #fbf2e3;
+  --app-border: #e7e5e4;
+  --app-warm: #b8942e;
+}
+
+body {
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: #1f1f1f;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(245, 223, 187, 0.22),
+      transparent 20%
+    ),
+    linear-gradient(180deg, #fffdfa 0%, #ffffff 48%, #f7f4ef 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Modais ($q.dialog) — visual preservado do ModalShell original
+.app-modal {
+  width: 100%;
+  max-width: 640px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(42, 26, 26, 0.25);
+
+  &--wide {
+    max-width: 820px;
+  }
+}
+
+.app-modal__accent {
+  height: 6px;
+  background: var(--app-green);
+}
+
+.app-modal__header {
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(42, 26, 26, 0.08);
+  background: rgba(251, 246, 234, 0.6);
+}
+
+.app-modal__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--app-dark);
+  letter-spacing: -0.01em;
+}
+
+.app-modal__body {
+  max-height: 70vh;
+  padding: 16px 24px;
+}
+
+.app-modal__footer {
+  padding: 12px 24px 14px;
+  border-top: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+// Botão primário da identidade visual
+.app-btn-primary {
+  background: var(--app-green);
+  color: #fff;
+
+  &:hover {
+    background: var(--app-dark);
+  }
+
+  &:before {
+    box-shadow: none !important;
+  }
+}
+
+// Cabeçalho padrão das páginas internas
+.app-page-content {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.app-page-content__title {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #111827;
+}
+
+.app-page-content__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+// ============================================================
+// Layout (AppLayout.vue) — estilos globais de propósito:
+// QDrawer/QHeader/QFooter têm CSS nativo próprio e seletores
+// scoped podem não vencer. Especificidade via .q-drawer.app-drawer.
+// ============================================================
+
+// Sidebar desktop — visual escuro do projeto original
+.q-drawer.app-drawer {
+  background: linear-gradient(
+    180deg,
+    rgba(42, 26, 26, 0.96),
+    rgba(55, 35, 35, 0.96)
+  );
+  backdrop-filter: blur(24px);
+
+  .app-drawer__logo {
+    height: 30px;
+    opacity: 0.9;
+  }
+
+  .app-drawer__item {
+    color: rgba(255, 255, 255, 0.65);
+    border-radius: 10px;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+
+    .q-icon {
+      color: inherit;
+    }
+
+    &:hover,
+    &.q-item--active,
+    &.app-drawer__item--active,
+    &.q-expansion-item--active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &.app-drawer__item--active,
+    &.q-item--active,
+    &.q-expansion-item--active {
+      background: rgba(255, 255, 255, 0.14);
+    }
+  }
+
+  .app-drawer__child--active {
+    color: #fff !important;
+    background: rgba(78, 110, 93, 0.55) !important;
+  }
+
+  .q-separator {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+// Header com breadcrumb
+.app-header {
+  background: transparent;
+  color: #374151;
+}
+
+.app-breadcrumb__separator {
+  color: #9ca3af;
+  font-weight: 300;
+}
+
+.app-breadcrumb__link {
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #4b5563;
+  }
+}
+
+.app-breadcrumb__current {
+  color: #374151;
+  font-weight: 600;
+}
+
+// Navegação inferior mobile
+.app-footer {
+  background: rgba(38, 26, 26, 0.98);
+}
+
+.app-footer .app-footer__btn {
+  color: rgba(255, 255, 255, 0.55);
+
+  &:hover,
+  &--active {
+    color: #fff;
+  }
+}
