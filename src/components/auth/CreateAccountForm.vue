@@ -60,7 +60,7 @@
       />
 
       <q-input
-        :model-value="cnpjf"
+        :model-value="state.cnpjf.value"
         label="CPF/CNPJ"
         placeholder="000.000.000-00"
         outlined
@@ -122,6 +122,7 @@ import {
 } from "@/utils/validators";
 import services from "@/services";
 import { EspecialtyAreaList } from "@/interfaces/users";
+import { useUserStore } from "@/stores/user";
 
 defineOptions({ name: "CreateAccountForm" });
 
@@ -133,6 +134,7 @@ const emit = defineEmits<{
 
 const $q = useQuasar();
 const router = useRouter();
+const userStore = useUserStore();
 
 const areaOptions = ref([...EspecialtyAreaList]);
 
@@ -206,24 +208,26 @@ async function handleSubmit() {
       cnpjf: state.cnpjf.value.replace(/\D/g, "")
     });
 
-    if (!error) {
-      window.localStorage.setItem("token", data.data.token);
+    if (error) {
       $q.notify({
-        type: "positive",
-        message: "Conta criada!",
-        caption: "Bem-vindo(a) ao MedKit!",
+        type: "warning",
+        message: "Ocorreu um erro ao criar a conta",
         timeout: 3000
       });
-      await router.push("/patients");
-      emit("created");
-      return true;
     }
 
+    window.localStorage.setItem("token", data.data.token);
+    userStore.setCurrentUser(data.data);
+
     $q.notify({
-      type: "warning",
-      message: "Ocorreu um erro ao criar a conta",
+      type: "positive",
+      message: "Conta criada!",
+      caption: "Bem-vindo(a) ao MedKit!",
       timeout: 3000
     });
+    await router.push("/");
+    emit("created");
+    return true;
   } catch (err) {
     $q.notify({
       type: "negative",

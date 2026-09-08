@@ -20,7 +20,9 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "typecheck": "vue-tsc --noEmit",
-    "postinstall": "quasar prepare --silent"
+    "postinstall": "quasar prepare --silent",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@quasar/extras": "^2.0.4",
@@ -33,12 +35,16 @@
   "devDependencies": {
     "@quasar/app-vite": "^3.7.0",
     "@types/node": "^22.19.11",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/test-utils": "^2.5.0",
     "autoprefixer": "^10.4.27",
+    "happy-dom": "^20.14.0",
     "oxfmt": "^0.x",
     "oxlint": "^1.x",
     "oxlint-tsgolint": "^7.0.2001",
     "postcss": "^8.5.8",
     "typescript": "^6.0.0",
+    "vitest": "^5.0.0",
     "vue-tsc": "^3.3.3"
   },
   "engines": {
