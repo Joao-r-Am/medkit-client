@@ -1,6 +1,6 @@
 <template>
   <div class="calendar">
-    <div class="calendar__main">
+    <div class="calendar__main flex column">
       <div class="row items-center justify-between q-mb-sm q-gutter-x-xs">
         <h3 class="calendar__month">{{ monthLabel }}</h3>
         <div class="row items-center q-gutter-x-xs">
@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <div class="calendar__grid-wrap">
+      <div class="calendar__grid-wrap col">
         <div class="calendar__grid">
           <div
             v-for="weekday in weekdays"
@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <aside class="calendar__panel">
+    <aside class="calendar__panel flex column">
       <div class="row items-center justify-between q-mb-md">
         <div>
           <p class="calendar__panel-caption">Agenda do dia</p>
@@ -105,109 +105,114 @@
         />
       </div>
 
-      <div v-if="loading" class="column items-center q-py-lg">
-        <q-spinner-dots size="2rem" color="grey-5" />
-      </div>
-
-      <div
-        v-else-if="
-          selectedDayAppointments.length === 0 &&
-          freeSlotsByProfessional.length === 0
-        "
-        class="column items-center q-py-lg"
-      >
-        <i class="fa-regular fa-calendar-xmark text-h5 text-grey-4"></i>
-        <p class="text-caption text-grey-5 q-mt-sm">
-          Sem agendamentos neste dia.
-        </p>
-      </div>
-
-      <template v-else>
-        <div class="calendar__cards">
-          <div
-            v-for="appointment in selectedDayAppointments"
-            :key="appointment.id"
-            class="calendar__card"
-            :style="cardStyle(appointment)"
-          >
-            <div class="row items-center justify-between q-mb-xs">
-              <span class="calendar__card-time">
-                {{ formatTime(appointment.startTime)
-                }}{{
-                  appointment.endTime
-                    ? ` – ${formatTime(appointment.endTime)}`
-                    : ""
-                }}
-              </span>
-              <span
-                class="app-status"
-                :class="statusClass(appointment.status ?? '')"
-              >
-                {{ statusLabel(appointment.status ?? "") }}
-              </span>
-            </div>
-            <p class="calendar__card-patient">
-              {{ appointment.patient?.name ?? "-" }}
-            </p>
-            <p class="calendar__card-meta">
-              <span>{{ serviceLabel(appointment) }}</span>
-              <span>·</span>
-              <span
-                class="calendar__dot"
-                :style="{ backgroundColor: chipColor(appointment) }"
-              ></span>
-              <span class="ellipsis">
-                {{ appointment.professional?.name ?? "-" }}
-              </span>
-            </p>
-            <div class="row justify-end q-gutter-x-xs q-mt-xs">
-              <q-btn
-                flat
-                round
-                dense
-                size="sm"
-                icon="fa-regular fa-pen-to-square"
-                class="text-grey-6 app-action"
-                title="Editar"
-                @click="emit('edit', appointment)"
-              />
-              <q-btn
-                flat
-                round
-                dense
-                size="sm"
-                icon="fa-regular fa-trash-can"
-                class="text-grey-6 app-action app-action--danger"
-                title="Excluir"
-                @click="emit('remove', appointment)"
-              />
-            </div>
-          </div>
+      <div class="col overflow-auto">
+        <div v-if="loading" class="column items-center q-py-lg">
+          <q-spinner-dots size="2rem" color="grey-5" />
         </div>
 
-        <div v-if="freeSlotsByProfessional.length > 0" class="calendar__slots">
-          <p class="calendar__slots-title">Horários livres</p>
-          <div
-            v-for="group in freeSlotsByProfessional"
-            :key="group.id"
-            class="q-mb-sm"
-          >
-            <p class="calendar__slots-professional">{{ group.name }}</p>
-            <div class="row q-gutter-xs">
-              <button
-                v-for="slot in group.slots"
-                :key="slot.id"
-                type="button"
-                class="calendar__slot-chip"
-                :title="`Novo agendamento com ${group.name}`"
-                @click="emit('createFromSlot', slot)"
-              >
-                {{ formatTime(slot.startTime) }}
-              </button>
+        <div
+          v-else-if="
+            selectedDayAppointments.length === 0 &&
+            freeSlotsByProfessional.length === 0
+          "
+          class="column items-center q-py-lg"
+        >
+          <i class="fa-regular fa-calendar-xmark text-h5 text-grey-4"></i>
+          <p class="text-caption text-grey-5 q-mt-sm">
+            Sem agendamentos neste dia.
+          </p>
+        </div>
+
+        <template v-else>
+          <div class="calendar__cards">
+            <div
+              v-for="appointment in selectedDayAppointments"
+              :key="appointment.id"
+              class="calendar__card"
+              :style="cardStyle(appointment)"
+            >
+              <div class="row items-center justify-between q-mb-xs">
+                <span class="calendar__card-time">
+                  {{ formatTime(appointment.startTime)
+                  }}{{
+                    appointment.endTime
+                      ? ` – ${formatTime(appointment.endTime)}`
+                      : ""
+                  }}
+                </span>
+                <span
+                  class="app-status"
+                  :class="statusClass(appointment.status ?? '')"
+                >
+                  {{ statusLabel(appointment.status ?? "") }}
+                </span>
+              </div>
+              <p class="calendar__card-patient">
+                {{ appointment.patient?.name ?? "-" }}
+              </p>
+              <p class="calendar__card-meta">
+                <span>{{ serviceLabel(appointment) }}</span>
+                <span>·</span>
+                <span
+                  class="calendar__dot"
+                  :style="{ backgroundColor: chipColor(appointment) }"
+                ></span>
+                <span class="ellipsis">
+                  {{ appointment.professional?.name ?? "-" }}
+                </span>
+              </p>
+              <div class="row justify-end q-gutter-x-xs q-mt-xs">
+                <q-btn
+                  flat
+                  round
+                  dense
+                  size="sm"
+                  icon="fa-regular fa-pen-to-square"
+                  class="text-grey-6 app-action"
+                  title="Editar"
+                  @click="emit('edit', appointment)"
+                />
+                <q-btn
+                  flat
+                  round
+                  dense
+                  size="sm"
+                  icon="fa-regular fa-trash-can"
+                  class="text-grey-6 app-action app-action--danger"
+                  title="Excluir"
+                  @click="emit('remove', appointment)"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </template>
+
+          <div
+            v-if="freeSlotsByProfessional.length > 0"
+            class="calendar__slots"
+          >
+            <p class="calendar__slots-title">Horários livres</p>
+            <div
+              v-for="group in freeSlotsByProfessional"
+              :key="group.id"
+              class="q-mb-sm"
+            >
+              <p class="calendar__slots-professional">{{ group.name }}</p>
+              <div class="row q-gutter-xs">
+                <button
+                  v-for="slot in group.slots"
+                  :key="slot.id"
+                  type="button"
+                  class="calendar__slot-chip"
+                  :title="`Novo agendamento com ${group.name}`"
+                  @click="emit('createFromSlot', slot)"
+                >
+                  {{ formatTime(slot.startTime) }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
     </aside>
   </div>
 </template>
@@ -440,10 +445,20 @@ function goToday() {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 20px;
-  align-items: start;
+  height: 100%;
+  min-height: 0;
 
   @media (max-width: 1023px) {
     grid-template-columns: 1fr;
+    overflow-y: auto;
+
+    .calendar__grid-wrap {
+      flex: none;
+    }
+
+    .calendar__panel {
+      height: auto;
+    }
   }
 }
 
@@ -455,7 +470,7 @@ function goToday() {
 }
 
 .calendar__grid-wrap {
-  overflow-x: auto;
+  overflow: auto;
   padding: 12px;
   background: #fff;
   border: 1px solid var(--app-border);
@@ -465,8 +480,12 @@ function goToday() {
 .calendar__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  // 1ª linha (weekdays) automática; as semanas se distribuem pela altura
+  grid-template-rows: auto;
+  grid-auto-rows: minmax(88px, 1fr);
   gap: 4px;
   min-width: 560px;
+  height: 100%;
 }
 
 .calendar__weekday {
@@ -481,7 +500,6 @@ function goToday() {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-height: 104px;
   padding: 4px 6px;
   cursor: pointer;
   text-align: left;
@@ -589,8 +607,8 @@ function goToday() {
 }
 
 .calendar__panel {
-  position: sticky;
-  top: 16px;
+  height: 100%;
+  overflow: hidden;
   padding: 16px;
   background: #fff;
   border: 1px solid var(--app-border);
@@ -614,8 +632,6 @@ function goToday() {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 420px;
-  overflow-y: auto;
 }
 
 .calendar__card {

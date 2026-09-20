@@ -5,16 +5,29 @@ type AppointmentListParams = {
   page?: number;
   limit?: number;
   preload?: string;
+  professionalIds?: string[];
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export default {
   getAll: async ({
     page = 1,
     limit = 100,
-    preload
+    preload,
+    professionalIds,
+    dateFrom,
+    dateTo
   }: AppointmentListParams = {}) => {
     const response = await httpClient.get("/appointments", {
-      params: { page, limit, preload }
+      params: {
+        page,
+        limit,
+        preload,
+        professional_ids: professionalIds?.join(","),
+        date_from: dateFrom,
+        date_to: dateTo
+      }
     });
     const { data } = response.data;
     return data;
@@ -23,10 +36,20 @@ export default {
   getList: async ({
     page = 1,
     limit = 20,
-    preload
+    preload,
+    professionalIds,
+    dateFrom,
+    dateTo
   }: AppointmentListParams = {}) => {
     const response = await httpClient.get("/appointments", {
-      params: { page, limit, preload }
+      params: {
+        page,
+        limit,
+        preload,
+        professional_ids: professionalIds?.join(","),
+        date_from: dateFrom,
+        date_to: dateTo
+      }
     });
     return response.data;
   },
