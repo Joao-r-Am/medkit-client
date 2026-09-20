@@ -1,5 +1,5 @@
 <template>
-  <div class="app-registrations">
+  <div class="app-registrations col flex column">
     <div class="row items-center justify-between q-mb-md q-gutter-y-sm">
       <div>
         <h1 class="app-registrations__title">{{ title }}</h1>
@@ -8,8 +8,11 @@
       <slot name="header-actions" />
     </div>
 
-    <div class="app-registrations__panel">
-      <div v-if="hasError" class="column items-center justify-center q-py-xl">
+    <div class="app-registrations__panel col flex column overflow-hidden">
+      <div
+        v-if="hasError"
+        class="col column items-center justify-center q-py-xl"
+      >
         <i class="fa-solid fa-triangle-exclamation text-h4 text-red-300"></i>
         <p class="text-caption text-grey-6 q-mt-sm">
           Erro ao carregar os dados. Tente novamente.
@@ -17,7 +20,7 @@
       </div>
       <div
         v-else-if="items.length === 0 && !isLoading"
-        class="column items-center justify-center q-py-xl"
+        class="col column items-center justify-center q-py-xl"
       >
         <i
           :class="icon ?? 'fa-regular fa-folder-open'"
@@ -30,6 +33,7 @@
       <AppTable
         v-else
         ref="tableRef"
+        class="col"
         :rows="items"
         :columns="columns"
         :loading="isLoading"

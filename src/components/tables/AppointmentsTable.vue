@@ -1,7 +1,8 @@
 <template>
-  <div>
+  <div class="flex column full-height">
     <AppTable
       ref="tableRef"
+      class="col"
       :rows="appointments"
       :columns="columns"
       :loading="loading"

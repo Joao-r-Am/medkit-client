@@ -69,8 +69,25 @@ defineExpose({
 
 <style scoped lang="scss">
 .app-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(42, 26, 26, 0.06);
+
+  // Apenas o corpo da tabela rola; header e paginador ficam fixos
+  :deep(.q-table__middle) {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  :deep(thead th) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
 
   :deep(.app-table__header) th {
     background: var(--app-dark);

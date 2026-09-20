@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Home">
-    <div class="app-dashboard">
+    <div class="app-dashboard col overflow-auto">
       <div class="q-mb-lg">
         <h1 class="text-h6 text-weight-bolder text-grey-9">Home</h1>
         <p class="text-caption text-grey-6"> Bem-vindo, {{ userName }} </p>

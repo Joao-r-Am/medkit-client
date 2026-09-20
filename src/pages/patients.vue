@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Pacientes">
-    <div class="app-page-content">
+    <div class="app-page-content col flex column">
       <div class="row items-center justify-between q-mb-md q-gutter-y-sm">
         <div>
           <h1 class="app-page-content__title">Pacientes</h1>
@@ -19,6 +19,7 @@
       </div>
 
       <AppTable
+        class="col"
         :rows="state.patients"
         :columns="patientColumns"
         :loading="state.isLoading"

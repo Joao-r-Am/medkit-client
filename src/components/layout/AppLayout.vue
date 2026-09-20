@@ -189,7 +189,11 @@
     </q-footer>
 
     <q-page-container>
-      <q-page padding class="app-page">
+      <q-page
+        padding
+        class="flex column overflow-hidden"
+        :style-fn="pageStyleFn"
+      >
         <slot />
       </q-page>
     </q-page-container>
@@ -218,6 +222,13 @@ const $q = useQuasar();
 const userStore = useUserStore();
 
 const sidebarOpen = ref(true);
+
+// Trava a altura da página na área visível (mesma fórmula do default do
+// Quasar, mas com height em vez de minHeight): o scroll nunca é da janela,
+// cada página/componente gerencia seu próprio scroll interno.
+function pageStyleFn(offset: number, height: number) {
+  return { height: `${height - offset}px` };
+}
 
 const userName = computed(() => userStore.state.currentUser.name || "...");
 

@@ -1,6 +1,6 @@
 <template>
   <AppLayout title="Configurações">
-    <div class="app-credentials">
+    <div class="app-credentials col overflow-auto">
       <div class="column items-center q-py-xl">
         <h1 class="text-h4 text-weight-bolder text-grey-8">Credenciais</h1>
         <p class="text-body1 text-grey-8">
