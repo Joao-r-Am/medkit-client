@@ -444,12 +444,16 @@ function goToday() {
 .calendar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  // Trava a linha na altura disponível; sem isso o conteúdo estoura e o
+  // tab-panel (overflow: hidden) corta as últimas semanas do mês.
+  grid-template-rows: minmax(0, 1fr);
   gap: 20px;
   height: 100%;
   min-height: 0;
 
   @media (max-width: 1023px) {
     grid-template-columns: 1fr;
+    grid-template-rows: none;
     overflow-y: auto;
 
     .calendar__grid-wrap {
@@ -469,7 +473,15 @@ function goToday() {
   color: var(--app-dark);
 }
 
+// Grid item: precisa de min-height: 0 para encolher dentro da linha travada
+.calendar__main {
+  min-height: 0;
+}
+
+// Flex item (.col): min-height: 0 faz o overflow: auto engatar e o scroll
+// ficar dentro da grade
 .calendar__grid-wrap {
+  min-height: 0;
   overflow: auto;
   padding: 12px;
   background: #fff;
@@ -608,6 +620,7 @@ function goToday() {
 
 .calendar__panel {
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   padding: 16px;
   background: #fff;
