@@ -1,8 +1,10 @@
 <template>
-  <div
-    class="filter-date-range row q-gutter-x-xs items-center"
-    style="width: 25%; min-width: 280px"
-  >
+  <!--
+    Período "De / Até": flex gap próprio (sem gutter do Quasar). O FilterBar
+    dá a largura (full no mobile, ~45% no desktop); os 2 inputs dividem o
+    espaço com flex: 1.
+  -->
+  <div class="filter-date-range">
     <q-input
       :model-value="displayFrom"
       label="De"
@@ -10,7 +12,6 @@
       dense
       readonly
       class="filter-date-range__input"
-      style="width: 130px"
       @click="showFrom = true"
     >
       <template #append>
@@ -34,7 +35,6 @@
       dense
       readonly
       class="filter-date-range__input"
-      style="width: 130px"
       @click="showTo = true"
     >
       <template #append>
@@ -118,3 +118,16 @@ function onToChange(value: string | undefined) {
   model.value = { from: dateFrom.value, to: dateTo.value };
 }
 </script>
+
+<style scoped lang="scss">
+.filter-date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-date-range__input {
+  flex: 1;
+  min-width: 0;
+}
+</style>

@@ -14,6 +14,20 @@ export function validateEmptyAndLength3(
   return true;
 }
 
+export function validateEmptyAndLength14(
+  value: string | undefined
+): ValidationResult {
+  if (!value) {
+    return "*Este campo é obrigatório";
+  }
+
+  if (value.length < 14) {
+    return "*Este campo precisa de no mínimo 14 caracteres";
+  }
+
+  return true;
+}
+
 export function validateEmpty(value: string | undefined): ValidationResult {
   if (!value) {
     return "*Este campo é obrigatório";

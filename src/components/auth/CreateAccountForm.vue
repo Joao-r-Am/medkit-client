@@ -65,7 +65,8 @@
         placeholder="000.000.000-00"
         outlined
         dense
-        :rules="[validateEmpty]"
+        maxlength="18"
+        :rules="[validateEmpty, validateEmptyAndLength14]"
         class="q-mt-sm"
         @update:model-value="onDocumentInput"
       />
@@ -118,7 +119,8 @@ import { formatDocument } from "@/utils/validators";
 import {
   validateEmptyAndLength3,
   validateEmptyAndEmail,
-  validateEmpty
+  validateEmpty,
+  validateEmptyAndLength14
 } from "@/utils/validators";
 import services from "@/services";
 import { EspecialtyAreaList } from "@/interfaces/users";

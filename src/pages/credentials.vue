@@ -17,59 +17,58 @@
           Este aqui é a sua chave de api
         </p>
 
-        <q-skeleton
-          v-if="state.isLoading"
-          width="600px"
-          height="50px"
-          class="q-mt-sm"
-        />
-        <div
-          v-else
-          class="row items-center justify-between app-credentials__box"
-        >
-          <span v-if="state.hasErrors" class="text-negative">
-            Erro ao carregar a api key
-          </span>
-          <span v-else id="apikey">{{ apiKey }}</span>
-          <div v-if="!state.hasErrors" class="row items-center q-gutter-x-sm">
-            <q-icon
-              name="content_copy"
-              size="24px"
-              color="grey-5"
-              class="cursor-pointer"
-              title="Copiar chave"
-              @click="handleCopy"
-            >
-              <q-tooltip>Copiar</q-tooltip>
-            </q-icon>
-            <q-btn
-              id="generate-apikey"
-              flat
-              round
-              dense
-              size="sm"
-              icon="sync"
-              color="grey-6"
-              :loading="state.isLoading"
-              @click="handleGenerateApiKey"
-            >
-              <q-tooltip>Gerar nova chave</q-tooltip>
-            </q-btn>
-          </div>
+        <div class="row items-center justify-between app-credentials__box">
+          <q-skeleton
+            v-if="state.isLoading"
+            type="text"
+            width="60%"
+            height="16px"
+          />
+          <template v-else>
+            <span v-if="state.hasErrors" class="text-negative">
+              Erro ao carregar a api key
+            </span>
+            <span v-else id="apikey">{{ apiKey }}</span>
+            <div v-if="!state.hasErrors" class="row items-center q-gutter-x-sm">
+              <q-icon
+                name="content_copy"
+                size="24px"
+                color="grey-5"
+                class="cursor-pointer"
+                title="Copiar chave"
+                @click="handleCopy"
+              >
+                <q-tooltip>Copiar</q-tooltip>
+              </q-icon>
+              <q-btn
+                id="generate-apikey"
+                flat
+                round
+                dense
+                size="sm"
+                icon="sync"
+                color="grey-6"
+                :loading="state.isLoading"
+                @click="handleGenerateApiKey"
+              >
+                <q-tooltip>Gerar nova chave</q-tooltip>
+              </q-btn>
+            </div>
+          </template>
         </div>
 
         <p class="q-mt-md text-body1 text-grey-9">
           Coloque o script abaixo no seu site para começar a receber feedbacks
         </p>
 
-        <q-skeleton
-          v-if="state.isLoading"
-          width="600px"
-          height="50px"
-          class="q-mt-sm"
-        />
-        <div v-else class="app-credentials__box overflow-auto">
-          <span v-if="state.hasErrors" class="text-negative">
+        <div class="app-credentials__box overflow-auto">
+          <q-skeleton
+            v-if="state.isLoading"
+            type="text"
+            width="75%"
+            height="16px"
+          />
+          <span v-else-if="state.hasErrors" class="text-negative">
             Erro ao carregar o script
           </span>
           <pre v-else class="app-credentials__script">

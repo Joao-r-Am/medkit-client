@@ -35,16 +35,20 @@ export default defineRouter((/* { store, ssrContext } */) => {
 
   // Guarda de autenticação: rotas fora da lista pública exigem token.
   const PUBLIC_PATHS = ["/login", "/auth"];
+  const PUBLIC_PREFIXES = ["/to-schedule/"];
 
   Router.beforeEach(to => {
-    const isPublic = PUBLIC_PATHS.includes(to.path);
+    const isPublic =
+      PUBLIC_PATHS.includes(to.path) ||
+      PUBLIC_PREFIXES.some(prefix => to.path.startsWith(prefix));
     const hasToken = Boolean(window.localStorage.getItem("token"));
 
     if (!isPublic && !hasToken) {
       return "/auth";
     }
 
-    if (isPublic && hasToken) {
+    const isBookingLink = to.path.startsWith("/to-schedule/");
+    if (isPublic && hasToken && !isBookingLink) {
       return "/";
     }
   });

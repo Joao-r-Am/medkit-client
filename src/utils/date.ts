@@ -51,6 +51,27 @@ export function getDiffTimeBetweenCurrentDate(
   return buildMessage("segundo", 1);
 }
 
+export type WeekRange = { from: Date; to: Date };
+
+/*
+ * Semana corrente (segunda 00:00:00.000 até domingo 23:59:59.999) no mesmo
+ * formato emitido pelo WeeklyAgenda. Centralizar aqui evita que a página e o
+ * componente calculem ranges levemente diferentes — o guard de race que
+ * descarta a resposta obsoleta compara os timestamps e falharia.
+ */
+export function getWeekRange(date: Date = new Date()): WeekRange {
+  const from = new Date(date);
+  const day = from.getDay();
+  from.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
+  from.setHours(0, 0, 0, 0);
+
+  const to = new Date(from);
+  to.setDate(from.getDate() + 6);
+  to.setHours(23, 59, 59, 999);
+
+  return { from, to };
+}
+
 export function toDateKey(value: string | Date): string {
   const date = new Date(value);
   const month = String(date.getMonth() + 1).padStart(2, "0");

@@ -18,9 +18,7 @@
       </q-card-section>
 
       <q-card-section class="scroll app-modal__body">
-        <div v-if="state.is_loading_data" class="flex justify-center q-pa-lg">
-          <q-spinner-dots size="2rem" color="grey-5" />
-        </div>
+        <AppSkeletonForm v-if="state.is_loading_data" :fields="3" />
         <q-form v-else ref="formRef" class="q-gutter-y-md" @submit.prevent>
           <q-input
             v-model="state.name.value"
@@ -58,8 +56,9 @@
         <q-btn
           flat
           no-caps
+          class="bg-grey text-bold"
           label="Cancelar"
-          color="grey-7"
+          color="dark"
           @click="onDialogCancel"
         />
         <q-btn
@@ -79,6 +78,7 @@
 import { onMounted, reactive, ref } from "vue";
 import { useDialogPluginComponent } from "quasar";
 import type { QForm } from "quasar";
+import AppSkeletonForm from "@/components/feedback/AppSkeletonForm.vue";
 import { validateEmptyAndLength3 } from "@/utils/validators";
 import services from "@/services";
 import toasty from "@/utils/toast";

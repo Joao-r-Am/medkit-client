@@ -1,32 +1,45 @@
 <template>
-  <q-table
-    v-model:pagination="pagination"
-    class="app-table"
-    flat
-    :rows="rows"
-    :columns="columns"
-    :loading="loading"
-    row-key="id"
-    :rows-per-page-options="[10, 25, 50]"
-    binary-state-sort
-  >
-    <template #header="cellProps">
-      <q-tr :props="cellProps" class="app-table__header">
-        <q-th v-for="col in cellProps.cols" :key="col.name" :props="cellProps">
-          {{ col.label }}
-        </q-th>
-      </q-tr>
-    </template>
+  <div class="app-table-swap">
+    <!--
+      Raiz única com v-show (não v-if): o q-table não remonta a cada troca de
+      loading e preserva scroll/ordenação; a classe que as páginas passam
+      (`col app-table-frame`) herda para o wrapper.
+    -->
+    <AppSkeletonTable v-show="loading" :columns="columns" :rows="6" />
+    <q-table
+      v-show="!loading"
+      v-model:pagination="pagination"
+      class="app-table"
+      flat
+      :rows="rows"
+      :columns="columns"
+      row-key="id"
+      :rows-per-page-options="[10, 25, 50]"
+      binary-state-sort
+    >
+      <template #header="cellProps">
+        <q-tr :props="cellProps" class="app-table__header">
+          <q-th
+            v-for="col in cellProps.cols"
+            :key="col.name"
+            :props="cellProps"
+          >
+            {{ col.label }}
+          </q-th>
+        </q-tr>
+      </template>
 
-    <template v-for="(_, name) in $slots" :key="name" #[name]="slotProps">
-      <slot :name="name" v-bind="slotProps ?? {}" />
-    </template>
-  </q-table>
+      <template v-for="(_, name) in $slots" :key="name" #[name]="slotProps">
+        <slot :name="name" v-bind="slotProps ?? {}" />
+      </template>
+    </q-table>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import type { QTableColumn } from "quasar";
+import AppSkeletonTable from "@/components/feedback/AppSkeletonTable.vue";
 
 type TablePagination = {
   sortBy: string | null;
@@ -41,11 +54,10 @@ const props = withDefaults(
   defineProps<{
     rows: Record<string, unknown>[];
     columns: QTableColumn[];
+    /** Mostra o skeleton no lugar da tabela enquanto o dado carrega. */
     loading?: boolean;
   }>(),
-  {
-    loading: false
-  }
+  { loading: false }
 );
 
 const pagination = ref<TablePagination>({
@@ -68,7 +80,17 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
+// Wrapper herda `col app-table-frame` do elemento raiz (fallthrough) e empilha
+// skeleton/tabela; `flex: 1` espelha o utilitário `.col` do Quasar.
+.app-table-swap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .app-table {
+  margin: 0 !important;
   display: flex;
   flex-direction: column;
   height: 100%;

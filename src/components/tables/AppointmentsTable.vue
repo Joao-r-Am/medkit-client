@@ -1,5 +1,5 @@
 <template>
-  <div class="flex column full-height">
+  <div class="flex column full-height app-table-frame">
     <AppTable
       ref="tableRef"
       class="col"
@@ -94,14 +94,14 @@ import { formatDate, formatTime } from "@/utils/date";
 
 defineOptions({ name: "AppointmentsTable" });
 
-interface AppointmentsTableProps {
-  appointments: Record<string, unknown>[];
-  loading?: boolean;
-}
-
-const props = withDefaults(defineProps<AppointmentsTableProps>(), {
-  loading: false
-});
+const props = withDefaults(
+  defineProps<{
+    appointments: Record<string, unknown>[];
+    /** Mostra o skeleton no lugar da tabela enquanto a aba carrega. */
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits<{
   edit: [appointment: Record<string, unknown>];

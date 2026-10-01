@@ -8,7 +8,9 @@
       <slot name="header-actions" />
     </div>
 
-    <div class="app-registrations__panel col flex column overflow-hidden">
+    <div
+      class="app-registrations__panel app-table-frame col flex column overflow-hidden"
+    >
       <div
         v-if="hasError"
         class="col column items-center justify-center q-py-xl"
@@ -31,12 +33,11 @@
         </p>
       </div>
       <AppTable
-        v-else
         ref="tableRef"
         class="col"
+        :loading="isLoading"
         :rows="items"
         :columns="columns"
-        :loading="isLoading"
       >
         <template v-for="(_, name) in $slots" :key="name" #[name]="slotProps">
           <slot :name="name" v-bind="slotProps ?? {}" />
@@ -90,7 +91,11 @@ defineExpose({ reload });
 </script>
 
 <style scoped lang="scss">
+// `width: 100%` é obrigatório: dentro do `q-page` (flex column) o
+// `margin: 0 auto` cancela o `align-items: stretch` e, sem largura definida,
+// a coluna encolheria até o conteúdo em vez de ocupar a área disponível.
 .app-registrations {
+  width: 100%;
   max-width: 80rem;
   margin: 0 auto;
 }

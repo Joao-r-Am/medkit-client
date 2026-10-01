@@ -101,6 +101,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/to-schedule/[token]': RouteRecordInfo<
+      '/to-schedule/[token]',
+      '/to-schedule/:token',
+      { token: ParamValue<true> },
+      { token: ParamValue<false> },
+      | never
+    >,
   }
 
   /**
@@ -193,6 +200,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/to-schedule/[token].vue': {
+      routes:
+        | '/to-schedule/[token]'
+      views:
+        | never
+      pathParamNames:
+        | 'token'
     }
   }
 
