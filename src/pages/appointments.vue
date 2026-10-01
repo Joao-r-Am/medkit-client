@@ -1,21 +1,82 @@
 <template>
   <AppLayout title="Agendamentos">
-    <div class="app-page-content col flex column">
-      <div class="row items-center justify-between">
-        <div>
-          <h1 class="app-page-content__title">Agendamentos</h1>
+    <div
+      class="app-page-content app-page-content--wide col flex column remove-margin"
+    >
+      <!--
+        Título + ações com flex gap (não os gutters do Quasar: gap cria espaço
+        real, sem margem negativa nem padding dentro do q-btn).
+        Desktop (≥1024px): 2 botões sempre visíveis + barra de filtros no
+        fluxo. Mobile (<1024px): tudo num menu só (⋮) — devolve ~150px de
+        altura para o calendário e a agenda semanal ocuparem a tela.
+      -->
+      <div class="page-header">
+        <h1 class="app-page-content__title">Agendamentos</h1>
+
+        <div v-if="!isMobile" class="page-header__actions">
+          <q-btn
+            unelevated
+            no-caps
+            icon="fa-solid fa-plus"
+            label="Novo Agendamento"
+            class="app-btn-primary"
+            @click="createAppointment()"
+          />
+          <q-btn
+            unelevated
+            no-caps
+            outline
+            color="dark"
+            icon="fa-solid fa-link"
+            label="Enviar Convite"
+            @click="openInviteModal()"
+          />
         </div>
-        <q-btn
-          unelevated
-          no-caps
-          icon="fa-solid fa-plus"
-          label="Novo Agendamento"
-          class="app-btn-primary"
-          @click="createAppointment()"
-        />
+
+        <q-btn-dropdown
+          v-else
+          ref="actionsMenuRef"
+          flat
+          round
+          dense
+          icon="fa-solid fa-ellipsis-vertical"
+          toggle-aria-label="Ações e filtros"
+          content-class="app-appointments-menu"
+        >
+          <q-list>
+            <q-item v-close-popup clickable @click="createAppointment()">
+              <q-item-section avatar>
+                <q-icon name="fa-solid fa-plus" size="sm" />
+              </q-item-section>
+              <q-item-section>Novo Agendamento</q-item-section>
+            </q-item>
+            <q-item v-close-popup clickable @click="openInviteModal()">
+              <q-item-section avatar>
+                <q-icon name="fa-solid fa-link" size="sm" />
+              </q-item-section>
+              <q-item-section>Enviar Convite</q-item-section>
+            </q-item>
+          </q-list>
+
+          <q-separator />
+
+          <div class="q-pa-md">
+            <FilterBar
+              embedded
+              @apply="menuApplyFilters"
+              @reset="menuResetFilters"
+            >
+              <FilterDoctor
+                v-model="selectedProfessionalIds"
+                :professionals="professionals"
+              />
+              <FilterDateRange v-model="dateRange" />
+            </FilterBar>
+          </div>
+        </q-btn-dropdown>
       </div>
 
-      <FilterBar @apply="applyFilters" @reset="resetFilters">
+      <FilterBar v-if="!isMobile" @apply="applyFilters" @reset="resetFilters">
         <FilterDoctor
           v-model="selectedProfessionalIds"
           :professionals="professionals"
@@ -24,13 +85,14 @@
       </FilterBar>
 
       <q-tabs
-        v-model="activeTab"
+        :model-value="activeTab"
         no-caps
         inline-label
         align="left"
         active-color="primary"
         indicator-color="primary"
         class="text-grey-6 q-mb-md"
+        @update:model-value="switchTab"
       >
         <q-tab name="tabela" icon="fa-solid fa-list" label="Tabela" />
         <q-tab
@@ -50,38 +112,45 @@
       <q-tab-panels
         v-else
         v-model="activeTab"
-        animated
+        keep-alive
         class="bg-transparent q-pa-none col"
       >
         <q-tab-panel name="tabela" class="q-pa-none">
           <AppointmentsTable
+            :loading="loadingTabs.tabela"
             :appointments="tableAppointments"
-            :loading="isLoading"
             @edit="editAppointment"
             @remove="deleteAppointment"
           />
         </q-tab-panel>
         <q-tab-panel name="calendario" class="q-pa-none">
+          <!--
+            v-show e não v-if: o painel fica em keep-alive e o componente tem
+            estado interno (data selecionada); remontar a cada troca de aba
+            perderia a posição do usuário.
+          -->
           <AppointmentCalendar
+            v-show="!loadingTabs.calendario"
             :appointments="calendarAppointments"
             :slots="filteredSlots"
             :professionals="professionals"
-            :loading="isLoading"
             @edit="editAppointment"
             @remove="deleteAppointment"
             @create-for-date="createForDate"
             @create-from-slot="createFromSlot"
           />
+          <AppSkeletonPanel v-if="loadingTabs.calendario" />
         </q-tab-panel>
-        <q-tab-panel name="semana" class="q-pa-none">
+        <q-tab-panel name="semana" class="q-pa-none w-100">
           <WeeklyAgenda
+            v-show="!loadingTabs.semana"
             :appointments="weeklyAppointments"
-            :loading="isWeeklyLoading"
             @edit="editAppointmentFromWeek"
             @remove="deleteAppointmentFromWeek"
             @create="createForWeekDay"
             @week-change="onWeekChange"
           />
+          <AppSkeletonPanel v-if="loadingTabs.semana" />
         </q-tab-panel>
       </q-tab-panels>
     </div>
@@ -89,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useQuasar } from "quasar";
 import AppLayout from "@/components/layout/AppLayout.vue";
 import AppointmentsTable from "@/components/tables/AppointmentsTable.vue";
@@ -100,25 +169,50 @@ import AppointmentCalendar, {
   type CalendarSlot
 } from "@/components/calendar/AppointmentCalendar.vue";
 import ModalAppointmentEdit from "@/components/modals/ModalAppointmentEdit.vue";
+import ModalInviteCreate from "@/components/modals/ModalInviteCreate.vue";
 import FilterBar from "@/components/filters/FilterBar.vue";
 import FilterDoctor from "@/components/filters/FilterDoctor.vue";
 import FilterDateRange from "@/components/filters/FilterDateRange.vue";
+import AppSkeletonPanel from "@/components/feedback/AppSkeletonPanel.vue";
 import { confirmDelete } from "@/utils/confirm";
+import { getWeekRange } from "@/utils/date";
+import type { WeekRange } from "@/utils/date";
 import services from "@/services";
+import {
+  defaultAppointmentFilters,
+  invalidate,
+  loadAppointmentsPage,
+  loadCalendarData,
+  loadProfessionalOptions,
+  loadScheduleSlots,
+  loadTableData,
+  loadWeeklyData
+} from "@/services/queries";
 import toasty from "@/utils/toast";
-
-defineOptions({ name: "AppointmentsPage" });
 
 const $q = useQuasar();
 
-const activeTab = ref<"tabela" | "calendario" | "semana">("tabela");
-const isLoading = ref(true);
-const isWeeklyLoading = ref(false);
+// Corte único md (1024px): abaixo dele ações + filtros moram no menu ⋮.
+const isMobile = computed(() => $q.screen.lt.md);
+
+// Ref do menu ⋮ (só existe no mobile) para fechar após Aplicar/Limpar.
+const actionsMenuRef = ref<{ hide: () => void } | null>(null);
+
+type Tab = "tabela" | "calendario" | "semana";
+
+// `activeTab` é a aba visível e troca no clique; `loadingTabs` mostra o
+// skeleton do painel enquanto os dados daquela aba chegam.
+const activeTab = ref<Tab>("tabela");
+const loadingTabs = reactive<Record<Tab, boolean>>({
+  tabela: true,
+  calendario: true,
+  semana: true
+});
 const hasError = ref(false);
 const tableAppointments = ref<CalendarAppointment[]>([]);
 const calendarAppointments = ref<CalendarAppointment[]>([]);
 const weeklyAppointments = ref<CalendarAppointment[]>([]);
-const weeklyRange = ref<{ from: Date; to: Date } | null>(null);
+const weeklyRange = ref<WeekRange>(getWeekRange());
 const slots = ref<CalendarSlot[]>([]);
 const professionals = ref<CalendarProfessional[]>([]);
 const selectedProfessionalIds = ref<string[]>([]);
@@ -134,21 +228,37 @@ const filteredSlots = computed(() => {
   );
 });
 
+function currentFilters() {
+  const defaults = defaultAppointmentFilters();
+
+  return {
+    professionalIds: selectedProfessionalIds.value,
+    dateFrom: dateRange.value.from ?? defaults.dateFrom,
+    dateTo: dateRange.value.to ?? defaults.dateTo
+  };
+}
+
+const TAB_ERROR = { title: "Não foi possível carregar a aba" };
+const WEEK_ERROR = { title: "Não foi possível carregar a semana" };
+
 function openAppointmentModal(props: Record<string, unknown>) {
   $q.dialog({
     component: ModalAppointmentEdit,
     componentProps: props
   }).onOk(() => {
-    void fetchCalendarData();
-    void fetchTableData();
-    if (weeklyRange.value) {
-      void fetchWeeklyData(weeklyRange.value);
-    }
+    refetchAll();
   });
 }
 
 function createAppointment() {
   openAppointmentModal({ title: "Novo Agendamento" });
+}
+
+function openInviteModal() {
+  $q.dialog({
+    component: ModalInviteCreate,
+    componentProps: { title: "Enviar convite de agendamento" }
+  }).onOk(() => undefined);
 }
 
 function createForDate(date: Date) {
@@ -215,8 +325,7 @@ async function deleteAppointment(data: Record<string, unknown>) {
       title: "Agendamento excluído com sucesso!",
       msg: "Sucesso"
     });
-    await fetchCalendarData();
-    await fetchTableData();
+    refetchAll();
   } catch (err) {
     toasty.errorToasty(
       { title: "Erro ao excluir agendamento", msg: "Erro" },
@@ -235,11 +344,7 @@ async function deleteAppointmentFromWeek(appt: CalendarAppointment) {
       title: "Agendamento excluído com sucesso!",
       msg: "Sucesso"
     });
-    await fetchCalendarData();
-    await fetchTableData();
-    if (weeklyRange.value) {
-      await fetchWeeklyData(weeklyRange.value);
-    }
+    refetchAll();
   } catch (err) {
     toasty.errorToasty(
       { title: "Erro ao excluir agendamento", msg: "Erro" },
@@ -248,113 +353,83 @@ async function deleteAppointmentFromWeek(appt: CalendarAppointment) {
   }
 }
 
-function getCurrentWeekDates() {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return {
-    from: monday.toISOString().split("T")[0]!,
-    to: sunday.toISOString().split("T")[0]!
-  };
-}
+// Os fetchers propagam erro; quem trata é o chamador (tela inteira na carga
+// inicial, aviso pontual numa troca de aba).
 
 async function fetchCalendarData() {
-  try {
-    const appointmentsData = await services.appointments.getAll({
-      preload: "patient,professional,exam,procedure",
-      limit: 500,
-      ...(selectedProfessionalIds.value.length > 0
-        ? { professionalIds: selectedProfessionalIds.value }
-        : {})
-    });
-    calendarAppointments.value = appointmentsData ?? [];
-  } catch {
-    hasError.value = true;
-  }
+  calendarAppointments.value = (await loadCalendarData(currentFilters())) ?? [];
 }
 
-function onWeekChange(range: { from: Date; to: Date }) {
+/*
+ * Navegação de semana: o WeeklyAgenda emite `weekChange` também no mount, então
+ * este handler NÃO pode mexer em `loadingTabs.semana` — trocar o flag desmonta
+ * o componente (v-if), que ao remontar emite de novo, em loop infinito. O dado
+ * antigo permanece na tela e a barra do topo acompanha o download.
+ */
+function onWeekChange(range: WeekRange) {
   weeklyRange.value = range;
-  void fetchWeeklyData(range);
+  void fetchWeeklyData(range).catch(() => toasty.errorToasty(WEEK_ERROR));
 }
 
-async function fetchWeeklyData(range: { from: Date; to: Date }) {
-  isWeeklyLoading.value = true;
-  try {
-    const appointmentsData = await services.appointments.getAll({
-      preload: "patient,professional,exam,procedure",
-      limit: 500,
-      dateFrom: range.from.toISOString(),
-      dateTo: range.to.toISOString(),
-      ...(selectedProfessionalIds.value.length > 0
-        ? { professionalIds: selectedProfessionalIds.value }
-        : {})
-    });
-    if (weeklyRange.value?.from.getTime() === range.from.getTime()) {
-      weeklyAppointments.value = appointmentsData ?? [];
-    }
-  } catch {
-    hasError.value = true;
-  } finally {
-    isWeeklyLoading.value = false;
+async function fetchWeeklyData(range: WeekRange) {
+  const appointmentsData = await loadWeeklyData(
+    selectedProfessionalIds.value,
+    range
+  );
+
+  // Descarta a resposta de uma semana que o usuário já navegou para trás.
+  if (weeklyRange.value.from.getTime() === range.from.getTime()) {
+    weeklyAppointments.value = appointmentsData ?? [];
   }
 }
 
 async function fetchTableData() {
-  const params: Record<string, unknown> = {
-    preload: "patient,professional,exam,procedure",
-    limit: 500
-  };
+  tableAppointments.value = (await loadTableData(currentFilters())) ?? [];
+}
 
-  if (selectedProfessionalIds.value.length) {
-    params.professionalIds = selectedProfessionalIds.value;
-  }
+async function loadSupportData() {
+  const [slotsData, professionalsData] = await Promise.all([
+    loadScheduleSlots(),
+    loadProfessionalOptions()
+  ]);
 
-  if (dateRange.value.from) {
-    params.dateFrom = dateRange.value.from;
-  }
-
-  if (dateRange.value.to) {
-    params.dateTo = dateRange.value.to;
-  }
-
-  try {
-    const appointmentsData = await services.appointments.getAll(params);
-    tableAppointments.value = appointmentsData ?? [];
-  } catch {
-    hasError.value = true;
-  }
+  slots.value = slotsData ?? [];
+  professionals.value = professionalsData ?? [];
 }
 
 async function fetchAppointments() {
-  isLoading.value = true;
   hasError.value = false;
+
   try {
+    // Dispara as 5 queries de uma vez; as chamadas abaixo só leem o cache
+    // e distribuem o resultado nos refs de cada aba.
+    await loadAppointmentsPage(currentFilters(), weeklyRange.value);
+
     await Promise.all([
       fetchCalendarData(),
       fetchTableData(),
-      services.scheduleSlots.getAll({ limit: 500 }),
-      services.professionals.getAll({ limit: 200 }).then(data => {
-        professionals.value = data ?? [];
-      })
+      fetchWeeklyData(weeklyRange.value),
+      loadSupportData()
     ]);
   } catch {
     hasError.value = true;
   } finally {
-    isLoading.value = false;
+    loadingTabs.tabela = false;
+    loadingTabs.calendario = false;
+    loadingTabs.semana = false;
   }
 }
 
 function refetchAll() {
-  void fetchCalendarData();
-  void fetchTableData();
-  if (weeklyRange.value) {
-    void fetchWeeklyData(weeklyRange.value);
-  }
+  invalidate("appointments");
+
+  // allSettled: uma falha isolada não pode derrubar as outras três abas, e o
+  // erro da aba Semanal tem tratamento próprio em fetchWeeklyData.
+  void Promise.allSettled([
+    fetchCalendarData(),
+    fetchTableData(),
+    fetchWeeklyData(weeklyRange.value)
+  ]);
 }
 
 function applyFilters() {
@@ -363,25 +438,78 @@ function applyFilters() {
 
 function resetFilters() {
   selectedProfessionalIds.value = [];
-  const weekDates = getCurrentWeekDates();
-  dateRange.value = {
-    from: weekDates.from as string,
-    to: weekDates.to as string
-  };
+  const { dateFrom, dateTo } = defaultAppointmentFilters();
+  dateRange.value = { from: dateFrom, to: dateTo };
   refetchAll();
 }
 
+// Aplicar/Limpar dentro do menu mobile: mesma ação da barra, mas fecha o
+// menu em seguida para o usuário ver o resultado na agenda.
+function menuApplyFilters() {
+  applyFilters();
+  actionsMenuRef.value?.hide();
+}
+
+function menuResetFilters() {
+  resetFilters();
+  actionsMenuRef.value?.hide();
+}
+
+/*
+ * Carregadores por aba: buscam E distribuem o resultado nos refs da página,
+ * para que a troca imediata mostre o dado fresco assim que o skeleton some.
+ */
+const TAB_LOADERS: Record<Tab, () => Promise<unknown>> = {
+  tabela: fetchTableData,
+  calendario: () => Promise.all([fetchCalendarData(), loadSupportData()]),
+  semana: () => fetchWeeklyData(weeklyRange.value)
+};
+
+/*
+ * Troca de aba imediata: o painel novo aparece na hora com o skeleton e a
+ * barra do topo acompanha o download — mesmo padrão da navegação entre
+ * páginas (src/utils/navigate.ts). Falha mostra o aviso e revela o painel
+ * com o dado que houver.
+ */
+async function switchTab(next: Tab) {
+  if (next === activeTab.value) return;
+
+  activeTab.value = next;
+  loadingTabs[next] = true;
+
+  try {
+    await TAB_LOADERS[next]();
+  } catch (error) {
+    toasty.errorToasty(TAB_ERROR, error);
+  } finally {
+    loadingTabs[next] = false;
+  }
+}
+
 onMounted(() => {
-  const weekDates = getCurrentWeekDates();
-  dateRange.value = {
-    from: weekDates.from as string,
-    to: weekDates.to as string
-  };
+  const { dateFrom, dateTo } = defaultAppointmentFilters();
+  dateRange.value = { from: dateFrom, to: dateTo };
+
   void fetchAppointments();
 });
 </script>
 
 <style scoped lang="scss">
+// Título + ações: flex com gap (espaço real, sem margem negativa de gutter)
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.page-header__actions {
+  display: flex;
+  gap: 8px;
+}
+
 // O painel ativo preenche a área restante; o scroll fica dentro de cada
 // componente (tabela, calendário, agenda), nunca na página.
 :deep(.q-tab-panels) {
@@ -393,5 +521,9 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.remove-margin {
+  margin: 0 !important;
 }
 </style>

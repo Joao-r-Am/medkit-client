@@ -15,8 +15,7 @@
     clearable
     label="Médico"
     placeholder="Selecione os médicos"
-    class="filter-doctor q-mr-sm"
-    style="width: 30%; min-width: 280px"
+    class="filter-doctor"
     @filter="onFilter"
   >
     <template #no-option>
@@ -30,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 defineOptions({ name: "FilterDoctor" });
 
@@ -40,16 +39,20 @@ const props = defineProps<{
 
 const model = defineModel<string[]>({ default: () => [] });
 
-const filteredOptions = ref<{ id: string; name?: string }[]>([
-  ...props.professionals
-]);
+const needle = ref("");
+
+// Precisa ser derivado: os profissionais chegam de forma assíncrona e um
+// snapshot feito no setup deixaria o select permanentemente vazio.
+const filteredOptions = computed(() => {
+  const term = needle.value.toLowerCase();
+  return props.professionals.filter(option =>
+    (option.name ?? "").toLowerCase().includes(term)
+  );
+});
 
 function onFilter(inputValue: string, update: (callback: () => void) => void) {
   update(() => {
-    const needle = inputValue.toLowerCase();
-    filteredOptions.value = props.professionals.filter(option => {
-      return (option.name ?? "").toLowerCase().includes(needle);
-    });
+    needle.value = inputValue;
   });
 }
 </script>

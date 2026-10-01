@@ -1,9 +1,13 @@
 <template>
   <div class="calendar">
     <div class="calendar__main flex column">
-      <div class="row items-center justify-between q-mb-sm q-gutter-x-xs">
-        <h3 class="calendar__month">{{ monthLabel }}</h3>
-        <div class="row items-center q-gutter-x-xs">
+      <!--
+        col ellipsis: o mês encolhe com reticências em telas estreitas enquanto
+        o grupo de navegação mantém a largura de conteúdo (no-wrap).
+      -->
+      <div class="row items-center justify-between q-mb-sm">
+        <h3 class="calendar__month col ellipsis">{{ monthLabel }}</h3>
+        <div class="row items-center q-gutter-x-xs no-wrap">
           <q-btn flat no-caps dense size="sm" label="Hoje" @click="goToday" />
           <q-btn
             flat
@@ -27,7 +31,11 @@
       </div>
 
       <div class="calendar__grid-wrap col">
-        <div class="calendar__grid">
+        <!-- compact: classe ligada pelo $q.screen abaixo de 600px (sm) -->
+        <div
+          class="calendar__grid"
+          :class="{ 'calendar__grid--compact': isCompact }"
+        >
           <div
             v-for="weekday in weekdays"
             :key="weekday"
@@ -65,7 +73,8 @@
                   :title="chipTitle(appointment)"
                   @click.stop="emit('edit', appointment)"
                 >
-                  <span class="calendar__chip-time">
+                  <!-- gt-xs: horário some abaixo de 600px, sobrando espaço p/ nome -->
+                  <span class="calendar__chip-time gt-xs">
                     {{ formatTime(appointment.startTime) }}
                   </span>
                   <span class="calendar__chip-label">
@@ -86,186 +95,102 @@
       </div>
     </div>
 
-    <aside class="calendar__panel flex column">
-      <div class="row items-center justify-between q-mb-md">
-        <div>
-          <p class="calendar__panel-caption">Agenda do dia</p>
-          <h4 class="calendar__panel-date">{{ formatDate(selectedDate) }}</h4>
-        </div>
-        <q-btn
-          flat
-          no-caps
-          dense
-          size="sm"
-          icon="fa-solid fa-plus"
-          label="Novo"
-          class="text-primary"
-          data-test="create-for-day"
-          @click="emit('createForDate', selectedDate)"
+    <!-- Desktop: painel lateral fixo com a agenda do dia -->
+    <aside v-if="!isMobile" class="calendar__panel flex column">
+      <CalendarDayAgenda
+        :date="selectedDate"
+        :appointments="selectedDayAppointments"
+        :free-slots="freeSlotsByProfessional"
+        @edit="emit('edit', $event)"
+        @remove="emit('remove', $event)"
+        @create-for-date="emit('createForDate', $event)"
+        @create-from-slot="emit('createFromSlot', $event)"
+      />
+    </aside>
+
+    <!--
+      Mobile (<1024px): a agenda do dia sobe como sheet inferior (~80vh),
+      estilo Samsung — o calendário do mês fica inteiro visível atrás e o
+      dia selecionado continua destacado na grade.
+    -->
+    <q-dialog v-else v-model="dayAgendaOpen" position="bottom" full-width>
+      <div class="calendar__panel calendar__panel--sheet">
+        <CalendarDayAgenda
+          closable
+          :date="selectedDate"
+          :appointments="selectedDayAppointments"
+          :free-slots="freeSlotsByProfessional"
+          @edit="emit('edit', $event)"
+          @remove="emit('remove', $event)"
+          @create-for-date="emit('createForDate', $event)"
+          @create-from-slot="emit('createFromSlot', $event)"
+          @close="dayAgendaOpen = false"
         />
       </div>
-
-      <div class="col overflow-auto">
-        <div v-if="loading" class="column items-center q-py-lg">
-          <q-spinner-dots size="2rem" color="grey-5" />
-        </div>
-
-        <div
-          v-else-if="
-            selectedDayAppointments.length === 0 &&
-            freeSlotsByProfessional.length === 0
-          "
-          class="column items-center q-py-lg"
-        >
-          <i class="fa-regular fa-calendar-xmark text-h5 text-grey-4"></i>
-          <p class="text-caption text-grey-5 q-mt-sm">
-            Sem agendamentos neste dia.
-          </p>
-        </div>
-
-        <template v-else>
-          <div class="calendar__cards">
-            <div
-              v-for="appointment in selectedDayAppointments"
-              :key="appointment.id"
-              class="calendar__card"
-              :style="cardStyle(appointment)"
-            >
-              <div class="row items-center justify-between q-mb-xs">
-                <span class="calendar__card-time">
-                  {{ formatTime(appointment.startTime)
-                  }}{{
-                    appointment.endTime
-                      ? ` – ${formatTime(appointment.endTime)}`
-                      : ""
-                  }}
-                </span>
-                <span
-                  class="app-status"
-                  :class="statusClass(appointment.status ?? '')"
-                >
-                  {{ statusLabel(appointment.status ?? "") }}
-                </span>
-              </div>
-              <p class="calendar__card-patient">
-                {{ appointment.patient?.name ?? "-" }}
-              </p>
-              <p class="calendar__card-meta">
-                <span>{{ serviceLabel(appointment) }}</span>
-                <span>·</span>
-                <span
-                  class="calendar__dot"
-                  :style="{ backgroundColor: chipColor(appointment) }"
-                ></span>
-                <span class="ellipsis">
-                  {{ appointment.professional?.name ?? "-" }}
-                </span>
-              </p>
-              <div class="row justify-end q-gutter-x-xs q-mt-xs">
-                <q-btn
-                  flat
-                  round
-                  dense
-                  size="sm"
-                  icon="fa-regular fa-pen-to-square"
-                  class="text-grey-6 app-action"
-                  title="Editar"
-                  @click="emit('edit', appointment)"
-                />
-                <q-btn
-                  flat
-                  round
-                  dense
-                  size="sm"
-                  icon="fa-regular fa-trash-can"
-                  class="text-grey-6 app-action app-action--danger"
-                  title="Excluir"
-                  @click="emit('remove', appointment)"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="freeSlotsByProfessional.length > 0"
-            class="calendar__slots"
-          >
-            <p class="calendar__slots-title">Horários livres</p>
-            <div
-              v-for="group in freeSlotsByProfessional"
-              :key="group.id"
-              class="q-mb-sm"
-            >
-              <p class="calendar__slots-professional">{{ group.name }}</p>
-              <div class="row q-gutter-xs">
-                <button
-                  v-for="slot in group.slots"
-                  :key="slot.id"
-                  type="button"
-                  class="calendar__slot-chip"
-                  :title="`Novo agendamento com ${group.name}`"
-                  @click="emit('createFromSlot', slot)"
-                >
-                  {{ formatTime(slot.startTime) }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </aside>
+    </q-dialog>
   </div>
 </template>
 
 <script lang="ts">
-export type CalendarAppointment = {
-  id: string;
-  startTime?: string | Date;
-  endTime?: string | Date;
-  status?: string;
-  patient?: { name?: string } | null;
-  professional?: { id?: string; name?: string } | null;
-  exam?: { name?: string } | null;
-  procedure?: { name?: string } | null;
-};
-
-export type CalendarSlot = {
-  id: string;
-  professionalId?: string;
-  startTime?: string | Date;
-  endTime?: string | Date;
-  status?: string;
-  appointments?: { deletedAt?: string | null }[];
-};
-
-export type CalendarProfessional = { id: string; name?: string };
+// Re-exporta os tipos: a página importa tudo de um lugar só.
+export type {
+  CalendarAppointment,
+  CalendarProfessional,
+  CalendarSlot
+} from "./calendar.types";
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onDeactivated, ref, watch } from "vue";
+import { useQuasar } from "quasar";
+import CalendarDayAgenda from "./CalendarDayAgenda.vue";
+import type {
+  CalendarAppointment,
+  CalendarProfessional,
+  CalendarSlot
+} from "./calendar.types";
 import {
   isSlotTaken,
   professionalColor,
   readableTextColor,
-  serviceLabel,
-  statusClass,
-  statusLabel
+  serviceLabel
 } from "@/utils/appointment-utils";
-import { formatDate, formatTime, toDateKey } from "@/utils/date";
+import { formatTime, toDateKey } from "@/utils/date";
 
 defineOptions({ name: "AppointmentCalendar" });
+
+const $q = useQuasar();
+
+// Corte único md (1024px): abaixo dele a agenda do dia abre em sheet
+// inferior no lugar do painel lateral.
+const isMobile = computed(() => $q.screen.lt.md);
+const dayAgendaOpen = ref(false);
+
+// Se a janela crescer para o desktop, o sheet não pode ficar pendurado.
+watch(isMobile, mobile => {
+  if (!mobile) dayAgendaOpen.value = false;
+});
+
+// O painel fica em keep-alive: sem isto o sheet continuaria aberto por cima
+// das outras abas ao trocar de visualização.
+onDeactivated(() => {
+  dayAgendaOpen.value = false;
+});
+
+// Abaixo de 600px (corte sm do Quasar) a célula encolhe: linhas mais baixas
+// e menos chips por dia, para o mês inteiro caber sem scroll vertical.
+const isCompact = computed(() => $q.screen.lt.sm);
+const maxChipsPerCell = computed(() => (isCompact.value ? 2 : 3));
 
 interface AppointmentCalendarProps {
   appointments: CalendarAppointment[];
   slots?: CalendarSlot[];
   professionals?: CalendarProfessional[];
-  loading?: boolean;
 }
 
 const props = withDefaults(defineProps<AppointmentCalendarProps>(), {
   slots: () => [],
-  professionals: () => [],
-  loading: false
+  professionals: () => []
 });
 
 const emit = defineEmits<{
@@ -276,7 +201,6 @@ const emit = defineEmits<{
 }>();
 
 const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const MAX_CHIPS_PER_CELL = 3;
 
 const now = new Date();
 const currentMonth = ref(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -374,11 +298,11 @@ function dayAppointments(day: Date): CalendarAppointment[] {
 }
 
 function visibleAppointments(day: Date): CalendarAppointment[] {
-  return sortByStartTime(dayAppointments(day)).slice(0, MAX_CHIPS_PER_CELL);
+  return sortByStartTime(dayAppointments(day)).slice(0, maxChipsPerCell.value);
 }
 
 function hiddenAppointmentsCount(day: Date): number {
-  return Math.max(0, dayAppointments(day).length - MAX_CHIPS_PER_CELL);
+  return Math.max(0, dayAppointments(day).length - maxChipsPerCell.value);
 }
 
 function isCancelled(appointment: CalendarAppointment): boolean {
@@ -394,11 +318,6 @@ function chipStyle(appointment: CalendarAppointment) {
   return { backgroundColor: color, color: readableTextColor(color) };
 }
 
-function cardStyle(appointment: CalendarAppointment) {
-  const color = chipColor(appointment);
-  return { borderLeftColor: color };
-}
-
 function chipTitle(appointment: CalendarAppointment): string {
   return [
     formatTime(appointment.startTime),
@@ -411,6 +330,9 @@ function chipTitle(appointment: CalendarAppointment): string {
 
 function selectDay(day: Date) {
   selectedDate.value = day;
+  // Mobile: tocar no dia abre a agenda (sheet), como no calendário da
+  // Samsung — o mês continua visível atrás e o dia fica destacado.
+  if (isMobile.value) dayAgendaOpen.value = true;
 }
 
 function previousMonth() {
@@ -451,17 +373,18 @@ function goToday() {
   height: 100%;
   min-height: 0;
 
-  @media (max-width: 1023px) {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    overflow-y: auto;
+  // 1023.98px = mesmo corte do breakpoint md (1024px) do Quasar: abaixo dele
+  // a grade ocupa a tela inteira (flex column) e a agenda do dia sobe como
+  // sheet (q-dialog) — nunca empilhada e nunca com scroll horizontal.
+  @media (max-width: 1023.98px) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 
-    .calendar__grid-wrap {
-      flex: none;
-    }
-
-    .calendar__panel {
-      height: auto;
+    .calendar__main {
+      // Crescente para a grade usar toda a altura; o scroll fica no
+      // grid-wrap (overflow: auto) e nada é cortado pelo tab-panel.
+      flex: 1;
     }
   }
 }
@@ -496,8 +419,22 @@ function goToday() {
   grid-template-rows: auto;
   grid-auto-rows: minmax(88px, 1fr);
   gap: 4px;
-  min-width: 560px;
   height: 100%;
+}
+
+// Só no desktop: largura mínima evita que as 7 colunas espremam os chips.
+// Abaixo de 1024px a grade ocupa 100% — sem min-width não existe scroll
+// horizontal (a causa do calendário "jogado para a direita").
+@media (min-width: 1024px) {
+  .calendar__grid {
+    min-width: 560px;
+  }
+}
+
+// Celular (<600px): células mais baixas deixam a grade mais respirável.
+// Geometria de grid não tem utilitário no Quasar — é a única regra própria.
+.calendar__grid--compact {
+  grid-auto-rows: minmax(64px, 1fr);
 }
 
 .calendar__weekday {
@@ -628,116 +565,13 @@ function goToday() {
   border-radius: 12px;
 }
 
-.calendar__panel-caption {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: #9ca3af;
-}
-
-.calendar__panel-date {
-  margin: 2px 0 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--app-dark);
-}
-
-.calendar__cards {
+// Sheet mobile: altura fixa de 80vh com o conteúdo rolando dentro; o radius
+// do topo arredonda o card que sobe de baixo (o Quasar zera o de baixo).
+// Largura full-width vem da prop `full-width` do q-dialog.
+.calendar__panel--sheet {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.calendar__card {
-  padding: 10px 12px;
-  background: #fff;
-  border-left: 4px solid var(--app-border);
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(42, 26, 26, 0.07);
-}
-
-.calendar__card-time {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.calendar__card-patient {
-  margin: 0;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.calendar__card-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 2px 0 0;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.calendar__dot {
-  display: inline-block;
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-}
-
-.app-status {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  white-space: nowrap;
-  border-radius: 999px;
-}
-
-.app-action:hover {
-  color: var(--app-green) !important;
-
-  &--danger:hover,
-  &.app-action--danger:hover {
-    color: #dc2626 !important;
-  }
-}
-
-.calendar__slots {
-  padding-top: 14px;
-  margin-top: 14px;
-  border-top: 1px solid var(--app-border);
-}
-
-.calendar__slots-title {
-  margin: 0 0 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.calendar__slots-professional {
-  margin: 0 0 4px;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.calendar__slot-chip {
-  padding: 3px 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--app-green);
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid rgba(78, 110, 93, 0.6);
-  border-radius: 999px;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-
-  &:hover {
-    background: var(--app-green);
-    color: #fff;
-  }
+  height: 80vh;
+  border-radius: 16px 16px 0 0;
 }
 </style>

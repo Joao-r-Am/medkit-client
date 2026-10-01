@@ -6,7 +6,7 @@
       icon="fa-solid fa-user-doctor"
       :columns="columns"
       empty-message="Nenhum profissional cadastrado."
-      :fetch-data="services.professionals.getAll"
+      :fetch-data="loadProfessionals"
     >
       <template #header-actions>
         <q-btn
@@ -54,6 +54,7 @@ import RegistrationsList from "@/components/registrations/RegistrationsList.vue"
 import ModalProfessionalEdit from "@/components/modals/ModalProfessionalEdit.vue";
 import { confirmDelete } from "@/utils/confirm";
 import services from "@/services";
+import { invalidate, loadProfessionals } from "@/services/queries";
 import toasty from "@/utils/toast";
 
 defineOptions({ name: "RegistrationsProfessionalsPage" });
@@ -79,6 +80,7 @@ const columns: QTableColumn[] = [
 ];
 
 function refresh() {
+  invalidate("registrations:professionals");
   void registrationsList.value?.reload();
 }
 

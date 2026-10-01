@@ -6,7 +6,7 @@
       icon="fa-solid fa-syringe"
       :columns="columns"
       empty-message="Nenhum procedimento cadastrado."
-      :fetch-data="services.procedures.getAll"
+      :fetch-data="loadProcedures"
     >
       <template #header-actions>
         <q-btn
@@ -60,6 +60,7 @@ import RegistrationsList from "@/components/registrations/RegistrationsList.vue"
 import ModalProcedureEdit from "@/components/modals/ModalProcedureEdit.vue";
 import { confirmDelete } from "@/utils/confirm";
 import services from "@/services";
+import { invalidate, loadProcedures } from "@/services/queries";
 import toasty from "@/utils/toast";
 
 defineOptions({ name: "RegistrationsProceduresPage" });
@@ -88,6 +89,7 @@ const columns: QTableColumn[] = [
 ];
 
 function refresh() {
+  invalidate("registrations:procedures");
   void registrationsList.value?.reload();
 }
 

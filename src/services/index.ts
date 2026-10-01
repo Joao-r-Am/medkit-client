@@ -6,6 +6,7 @@ import ProfessionalService from "./professionals";
 import ExamService from "./exams";
 import ProcedureService from "./procedures";
 import ScheduleSlotService from "./schedule-slots";
+import SchedulingInvitesService from "./scheduling-invites";
 
 export default {
   auth: AuthService,
@@ -15,5 +16,6 @@ export default {
   professionals: ProfessionalService,
   exams: ExamService,
   procedures: ProcedureService,
-  scheduleSlots: ScheduleSlotService
+  scheduleSlots: ScheduleSlotService,
+  schedulingInvites: SchedulingInvitesService
 };

@@ -18,11 +18,19 @@
         />
       </div>
 
+      <div v-if="state.hasError" class="col column items-center justify-center">
+        <i class="fa-solid fa-triangle-exclamation text-h4 text-red-300"></i>
+        <p class="text-caption text-grey-6 q-mt-sm">
+          Erro ao carregar os pacientes. Tente novamente.
+        </p>
+      </div>
+
       <AppTable
-        class="col"
+        v-else
+        class="col app-table-frame"
+        :loading="state.isLoading"
         :rows="state.patients"
         :columns="patientColumns"
-        :loading="state.isLoading"
         :pagination="{
           sortBy: null,
           descending: false,
@@ -84,6 +92,7 @@ import ModalUserEdit from "@/components/modals/ModalUserEdit.vue";
 import { confirmDelete } from "@/utils/confirm";
 import { formatDate } from "@/utils/date";
 import services from "@/services";
+import { invalidate, loadPatients } from "@/services/queries";
 import toasty from "@/utils/toast";
 
 defineOptions({ name: "PatientsPage" });
@@ -92,6 +101,7 @@ const $q = useQuasar();
 
 const state = reactive({
   isLoading: true,
+  hasError: false,
   patients: [] as Record<string, unknown>[]
 });
 
@@ -109,6 +119,8 @@ function openPatientModal(props: Record<string, unknown>) {
     component: ModalUserEdit,
     componentProps: props
   }).onOk(() => {
+    invalidate("patients");
+    invalidate("dashboard");
     void fetchPatients();
   });
 }
@@ -132,6 +144,8 @@ async function deletePatient(data: Record<string, unknown>) {
 
   try {
     await services.patients.destroy(String(data.id));
+    invalidate("patients");
+    invalidate("dashboard");
     toasty.successToasty({
       title: "Paciente excluído com sucesso!",
       msg: "Sucesso"
@@ -144,8 +158,11 @@ async function deletePatient(data: Record<string, unknown>) {
 
 async function fetchPatients() {
   try {
-    state.isLoading = true;
-    state.patients = await services.patients.getAll({ limit: 20, offset: 0 });
+    state.patients = (await loadPatients()) ?? [];
+    state.hasError = false;
+  } catch (error) {
+    state.hasError = true;
+    toasty.errorToasty({ title: "Erro ao carregar pacientes" }, error);
   } finally {
     state.isLoading = false;
   }

@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 export const notifyMock = vi.fn();
 export const pushMock = vi.fn().mockResolvedValue(undefined);
+export const currentRouteMock = { value: { path: "/" } };
 export const setCurrentUserMock = vi.fn();
 
 export const loginMock = vi.fn();
@@ -31,7 +32,8 @@ vi.mock("quasar", () => ({
 
 vi.mock("vue-router", () => ({
   useRouter: () => ({
-    push: pushMock
+    push: pushMock,
+    currentRoute: currentRouteMock
   })
 }));
 
@@ -54,28 +56,11 @@ vi.mock("@/services", () => ({
   }
 }));
 
-vi.mock("@/utils/validators", () => ({
-  validateEmptyAndLength3: vi.fn((v: string) => {
-    if (!v) return "*Este campo é obrigatório";
-    if (v.length < 3) return "*Mínimo 3 caracteres";
-    return true;
-  }),
-  validateEmptyAndEmail: vi.fn((v: string) => {
-    if (!v) return "*Este campo é obrigatório";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "*E-mail inválido";
-    return true;
-  }),
-  validateEmpty: vi.fn((v: string) => {
-    if (!v) return "*Este campo é obrigatório";
-    return true;
-  }),
-  validateEmailOrDocument: vi.fn((v: string) => {
-    if (!v) return "*Informe e-mail ou documento";
-    if (v.includes("@")) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "*E-mail inválido";
-    }
-    return true;
-  }),
-  formatDocument: vi.fn((v: string) => v),
-  stripDocumentFormatting: vi.fn((v: string) => v.replace(/\D/g, ""))
-}));
+vi.mock("@/utils/validators", async importOriginal => {
+  const actual = await importOriginal<typeof import("@/utils/validators")>();
+
+  return {
+    ...actual,
+    formatDocument: vi.fn(actual.formatDocument)
+  };
+});

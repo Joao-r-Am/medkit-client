@@ -70,6 +70,10 @@ body {
   background: rgba(255, 255, 255, 0.7);
 }
 
+.bg-grey {
+  background-color: #616161;
+}
+
 // Botão primário da identidade visual
 .app-btn-primary {
   background: var(--app-green);
@@ -84,10 +88,53 @@ body {
   }
 }
 
+// ============================================================
+// Barra de progresso global (AppProgressBar.vue) — mesmo estilo
+// do topo do YouTube. Fica acima do QHeader e do QDialog para
+// que a espera fique visível sobre qualquer conteúdo.
+// ============================================================
+.app-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  // A barra é apenas informativo: nunca deve capturar clique.
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(42, 26, 26, 0.18);
+
+  // O Quasar anima a barra por `transform`, mas no modo determinado o que
+  // muda de tamanho é o `width` do modelo. Sem esta regra, cada evento de
+  // progresso (o axios throttla a 1 a cada 3ms) daria um salto seco e a barra
+  // pareceria "piscar" em vez de deslizar. 0.3s acompanha a duração que o
+  // próprio Quasar usa.
+  .q-linear-progress__model--determinate {
+    transition: width 0.3s;
+  }
+}
+
 // Cabeçalho padrão das páginas internas
+// Coluna de conteúdo das páginas. O `width: 100%` é obrigatório: dentro do
+// `q-page` (flex column) o `margin: 0 auto` cancela o `align-items: stretch`
+// e, sem largura definida, a coluna encolheria até o conteúdo.
 .app-page-content {
+  width: 100%;
   max-width: 80rem;
   margin: 0 auto;
+
+  // Variante sem teto: páginas com grades de calendário/agenda ocupam 100% da
+  // largura disponível, em vez do limite padrão de 80rem
+  &--wide {
+    max-width: none;
+  }
+
+  // O Quasar define `.flex > .col { width: auto }` (especificidade 0,2,0), que
+  // sobrepõe uma regra de classe única e faria a coluna encolher até o
+  // conteúdo. O seletor composto com `.col` tem a mesma especificidade e vem
+  // depois no bundle, então passa a valer.
+  &.col {
+    width: 100%;
+  }
 }
 
 .app-page-content__title {
@@ -105,8 +152,38 @@ body {
 }
 
 // ============================================================
+// Tabelas
+// ============================================================
+
+// Largura padronizada das tabelas: 75% da área de conteúdo (a sidebar e o
+// padding da página já ficam de fora, por isso não é 75vw) e centralizada.
+// Abaixo de 768px ocupa 100% — mesmo corte do MOBILE_BREAKPOINT do
+// AppLayout: 75% de uma tela de 375px daria 281px e só geraria scroll
+// horizontal. Aplicada onde cada tabela vive (AppTable nas páginas e no
+// AppointmentsTable, no painel dos Cadastros para o card encolher junto).
+.app-table-frame {
+  width: 75%;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media (max-width: 767px) {
+    width: 100%;
+  }
+
+  // Mesmo motivo de `.app-page-content.col`: o `width: auto` do
+  // `.flex > .col` do Quasar tem especificidade 0,2,0 e vence esta regra.
+  &.col {
+    width: 75%;
+
+    @media (max-width: 767px) {
+      width: 100%;
+    }
+  }
+}
+
+// ============================================================
 // Layout (AppLayout.vue) — estilos globais de propósito:
-// QDrawer/QHeader/QFooter têm CSS nativo próprio e seletores
+// QDrawer/QHeader têm CSS nativo próprio e seletores
 // scoped podem não vencer. Especificidade via .q-drawer.app-drawer.
 // ============================================================
 
@@ -155,6 +232,14 @@ body {
     background: rgba(78, 110, 93, 0.55) !important;
   }
 
+  // No mobile a lista precisa rolar em telas baixas (celular deitado):
+  // `.col` do Quasar é `flex: 10000 1 0%` e, sem `min-height: 0`, o
+  // `overflow` não tem efeito dentro de um column flex.
+  .app-drawer__list {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
   .q-separator {
     background: rgba(255, 255, 255, 0.12);
   }
@@ -164,6 +249,11 @@ body {
 .app-header {
   background: transparent;
   color: #374151;
+}
+
+.app-header__menu-btn {
+  color: #374151;
+  margin-right: 4px;
 }
 
 .app-breadcrumb__separator {
@@ -186,16 +276,11 @@ body {
   font-weight: 600;
 }
 
-// Navegação inferior mobile
-.app-footer {
-  background: rgba(38, 26, 26, 0.98);
-}
-
-.app-footer .app-footer__btn {
-  color: rgba(255, 255, 255, 0.55);
-
-  &:hover,
-  &--active {
-    color: #fff;
-  }
+// ============================================================
+// Página de Agendamentos (appointments.vue) — menu ⋮ do mobile.
+// Global porque o QMenu renderiza em portal (fora do scope do componente).
+// ============================================================
+.q-menu.app-appointments-menu {
+  min-width: min(92vw, 360px);
+  border-radius: 12px;
 }

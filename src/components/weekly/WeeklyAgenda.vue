@@ -1,7 +1,7 @@
 <template>
   <div class="weekly-agenda">
     <div class="weekly-agenda__header">
-      <div class="row items-center q-gutter-x-sm">
+      <div class="row items-center q-gutter-x-sm no-wrap">
         <q-btn
           outline
           no-caps
@@ -11,42 +11,42 @@
           class="weekly-agenda__nav-btn"
           @click="goToday"
         />
+        <!-- No modo dia os ‹ › movem o DIA; no desktop, a semana inteira -->
         <q-btn
           outline
           round
           color="grey-7"
           icon="fa-solid fa-chevron-left"
-          aria-label="Semana anterior"
+          :aria-label="isSingleDay ? 'Dia anterior' : 'Semana anterior'"
           class="weekly-agenda__nav-btn"
-          @click="previousWeek"
+          @click="previous"
         />
         <q-btn
           outline
           round
           color="grey-7"
           icon="fa-solid fa-chevron-right"
-          aria-label="Próxima semana"
+          :aria-label="isSingleDay ? 'Próximo dia' : 'Próxima semana'"
           class="weekly-agenda__nav-btn"
-          @click="nextWeek"
+          @click="next"
         />
       </div>
-      <h3 class="weekly-agenda__title">{{ weekLabel }}</h3>
+      <!-- Abaixo de 1024px o título é o dia visível; acima, a semana -->
+      <h3 class="weekly-agenda__title">{{
+        isSingleDay ? dayLabel : weekLabel
+      }}</h3>
     </div>
 
-    <q-linear-progress
-      v-if="loading"
-      indeterminate
-      color="primary"
-      size="2px"
-    />
-
-    <div class="weekly-agenda__scroll">
-      <div class="weekly-agenda__grid">
+    <div ref="scrollRef" class="weekly-agenda__scroll">
+      <div
+        class="weekly-agenda__grid"
+        :class="{ 'weekly-agenda__grid--single': isSingleDay }"
+      >
         <div class="weekly-agenda__corner" />
 
         <div
-          v-for="(day, dayIndex) in weekDays"
-          :key="`header-${dayIndex}`"
+          v-for="day in visibleDays"
+          :key="`header-${toDateKey(day.date)}`"
           class="weekly-agenda__day-header"
           :class="{
             'weekly-agenda__day-header--today': day.isToday
@@ -73,8 +73,8 @@
         </div>
 
         <div
-          v-for="(day, dayIndex) in weekDays"
-          :key="`col-${dayIndex}`"
+          v-for="day in visibleDays"
+          :key="`col-${toDateKey(day.date)}`"
           class="weekly-agenda__day-column"
           :class="{ 'weekly-agenda__day-column--today': day.isToday }"
           @click="onGridClick($event, day)"
@@ -141,14 +141,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  computed,
+  nextTick,
+  ref,
+  watch,
+  onMounted,
+  onBeforeUnmount
+} from "vue";
+import { useQuasar } from "quasar";
 import {
   professionalColor,
   readableTextColor,
   serviceLabel,
   statusLabel
 } from "@/utils/appointment-utils";
-import { formatTime } from "@/utils/date";
+import { formatTime, getWeekRange } from "@/utils/date";
+import type { WeekRange } from "@/utils/date";
 
 defineOptions({ name: "WeeklyAgenda" });
 
@@ -172,14 +181,13 @@ interface WeekDay {
 
 const props = defineProps<{
   appointments: WeeklyAppointment[];
-  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
   edit: [appointment: WeeklyAppointment];
   remove: [appointment: WeeklyAppointment];
   create: [data: { date: Date; hour?: number; minute?: number }];
-  weekChange: [range: { from: Date; to: Date }];
+  weekChange: [range: WeekRange];
 }>();
 
 const startHour = 6;
@@ -194,7 +202,7 @@ const hours = Array.from(
 
 const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-const weekStart = ref(getWeekStart(new Date()));
+const weekStart = ref(getWeekRange().from);
 
 const weekDays = computed<WeekDay[]>(() => {
   const days: WeekDay[] = [];
@@ -216,6 +224,44 @@ const weekDays = computed<WeekDay[]>(() => {
 
   return days;
 });
+
+const $q = useQuasar();
+
+// Modo dia único: abaixo do breakpoint md (1024px) do Quasar a grade de 7 dias
+// (min-width 1024px) não cabe sem scroll horizontal — renderizamos 1 dia só.
+const isSingleDay = computed(() => $q.screen.lt.md);
+
+// Índice (0–6) do dia visível quando está no modo dia único.
+const mobileDayIndex = ref(0);
+
+// Índice do dia de hoje dentro da semana exibida (0 se a semana não o contém).
+function todayIndexInWeek(): number {
+  const key = toDateKey(new Date());
+  return Math.max(
+    0,
+    weekDays.value.findIndex(d => toDateKey(d.date) === key)
+  );
+}
+
+// No modo dia renderiza só a célula escolhida; no desktop, os 7 dias.
+const visibleDays = computed(() => {
+  if (!isSingleDay.value) return weekDays.value;
+  return [weekDays.value[mobileDayIndex.value] ?? weekDays.value[0]!];
+});
+
+// Título do modo dia: "seg, 29 set".
+const dayLabel = computed(() => {
+  const day = weekDays.value[mobileDayIndex.value];
+  if (!day) return "";
+  const date = day.date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short"
+  });
+  return `${day.name}, ${date.replace(".", "")}`;
+});
+
+// Elemento de scroll da grade (para posicionar a vista na hora atual).
+const scrollRef = ref<HTMLElement | null>(null);
 
 const weekLabel = computed(() => {
   const start = weekDays.value[0]!.date;
@@ -241,10 +287,7 @@ const nowLineTop = computed(() => {
 watch(
   weekStart,
   start => {
-    const to = new Date(start);
-    to.setDate(to.getDate() + 6);
-    to.setHours(23, 59, 59, 999);
-    emit("weekChange", { from: new Date(start), to });
+    emit("weekChange", getWeekRange(start));
   },
   { immediate: true }
 );
@@ -269,15 +312,6 @@ function dayAppointments(date: Date) {
         new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
       );
     });
-}
-
-function getWeekStart(date: Date) {
-  const day = date.getDay();
-  const offset = day === 0 ? -6 : 1 - day;
-  const start = new Date(date);
-  start.setDate(date.getDate() + offset);
-  start.setHours(0, 0, 0, 0);
-  return start;
 }
 
 function toDateKey(value: string | Date): string {
@@ -354,25 +388,75 @@ function onEventClick(appt: WeeklyAppointment) {
   emit("edit", appt);
 }
 
-function previousWeek() {
-  const newStart = new Date(weekStart.value);
-  newStart.setDate(newStart.getDate() - 7);
-  weekStart.value = newStart;
+// Navegação: no modo dia ‹ › andam um dia (pulando de semana nas bordas);
+// no desktop andam uma semana inteira.
+function previous() {
+  if (isSingleDay.value) {
+    moveDay(-1);
+    return;
+  }
+  shiftWeek(-7);
 }
 
-function nextWeek() {
+function next() {
+  if (isSingleDay.value) {
+    moveDay(1);
+    return;
+  }
+  shiftWeek(7);
+}
+
+function moveDay(delta: number) {
+  const target = mobileDayIndex.value + delta;
+  if (target < 0) {
+    shiftWeek(-7);
+    mobileDayIndex.value = 6;
+    return;
+  }
+  if (target > 6) {
+    shiftWeek(7);
+    mobileDayIndex.value = 0;
+    return;
+  }
+  mobileDayIndex.value = target;
+}
+
+function shiftWeek(days: number) {
   const newStart = new Date(weekStart.value);
-  newStart.setDate(newStart.getDate() + 7);
+  newStart.setDate(newStart.getDate() + days);
   weekStart.value = newStart;
 }
 
 function goToday() {
-  weekStart.value = getWeekStart(new Date());
+  weekStart.value = getWeekRange().from;
+  mobileDayIndex.value = todayIndexInWeek();
+  if (isSingleDay.value) void nextTick(scrollToNow);
 }
+
+// Rola a grade até perto da linha do "agora" (08h fora do expediente): a grade
+// tem 1088px e abrir no topo mostraria só a madrugada vazia.
+function scrollToNow() {
+  const el = scrollRef.value;
+  if (!el) return;
+  const anchor =
+    nowLineTop.value > 0 ? nowLineTop.value : hourToPixel(8 - startHour);
+  el.scrollTop = Math.max(0, anchor - el.clientHeight / 3);
+}
+
+// Ao entrar no modo dia (resize/mobile), volta para o dia de hoje e posiciona
+// a vista na hora atual.
+watch(isSingleDay, single => {
+  if (!single) return;
+  mobileDayIndex.value = todayIndexInWeek();
+  void nextTick(scrollToNow);
+});
 
 let nowInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
+  // No modo dia único, abre já rolado até a hora atual.
+  if (isSingleDay.value) void nextTick(scrollToNow);
+
   nowInterval = setInterval(() => {
     now.value = new Date();
   }, 60000);
@@ -394,6 +478,13 @@ onBeforeUnmount(() => {
   border-radius: 12px;
   border: 1px solid var(--app-border);
   padding: 16px;
+
+  // Mobile: menos moldura e menos espaço entre as partes = mais altura
+  // útil para a grade de horas (o card branco ocupa a tela inteira).
+  @media (max-width: 1023.98px) {
+    gap: 8px;
+    padding: 10px;
+  }
 }
 
 .weekly-agenda__header {
@@ -430,6 +521,14 @@ onBeforeUnmount(() => {
   grid-template-columns: 64px repeat(7, minmax(132px, 1fr));
   min-width: 1024px;
   position: relative;
+}
+
+// Modo dia único (<1024px): coluna de tempo estreita + o dia em largura total,
+// sem min-width — acaba o scroll horizontal e o evento fica bem legível.
+// (Regra própria porque grid-template-columns não tem utilitário no Quasar.)
+.weekly-agenda__grid--single {
+  grid-template-columns: 56px minmax(0, 1fr);
+  min-width: 0;
 }
 
 .weekly-agenda__corner {

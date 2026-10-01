@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      "@": resolve(import.meta.dirname, "src")
+      "@": resolve(import.meta.dirname, "src"),
+      // Módulo virtual do build do Quasar: sem este alias nenhum boot file
+      // (ex.: src/boot/axios.ts) pode ser importado em teste.
+      "#q-app": resolve(import.meta.dirname, "src/__tests__/stubs/q-app.ts")
     }
   },
   test: {

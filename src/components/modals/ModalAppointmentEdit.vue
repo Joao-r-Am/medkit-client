@@ -18,9 +18,7 @@
       </q-card-section>
 
       <q-card-section class="scroll app-modal__body">
-        <div v-if="state.isLoadingData" class="flex justify-center q-pa-lg">
-          <q-spinner-dots size="2rem" color="grey-5" />
-        </div>
+        <AppSkeletonForm v-if="state.isLoadingData" :fields="5" />
         <q-form v-else ref="formRef" class="q-gutter-y-md" @submit.prevent>
           <div class="row q-col-gutter-md">
             <SelectField
@@ -150,8 +148,9 @@
         <q-btn
           flat
           no-caps
+          class="bg-grey text-bold"
           label="Cancelar"
-          color="grey-7"
+          color="dark"
           @click="onDialogCancel"
         />
         <q-btn
@@ -174,6 +173,7 @@ import type { QForm } from "quasar";
 import DateField from "@/components/fields/DateField.vue";
 import TimeField from "@/components/fields/TimeField.vue";
 import SelectField from "@/components/fields/SelectField.vue";
+import AppSkeletonForm from "@/components/feedback/AppSkeletonForm.vue";
 import { validateSelection, validateTime } from "@/utils/validators";
 import { formatTime, toDateKey } from "@/utils/date";
 import services from "@/services";

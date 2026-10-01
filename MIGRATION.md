@@ -15,7 +15,7 @@
 | Modais             | `$q.dialog({ component, componentProps })` + `useDialogPluginComponent()` — elimina `ModalFactory`/`useModal`/event bus                                          |
 | Notificações       | Plugin `Notify`; wrapper em `src/utils/toast.ts` mantém a API `successToasty/errorToasty/warnToasty/infoToasty`                                                  |
 | Confirmações       | `$q.dialog` nativo (substitui `DeleteConfirm.vue`)                                                                                                               |
-| Sidebar/Layout     | Conventional Quasar: `QLayout` + `QDrawer` (estilo novo liberado pelo usuário); breadcrumb no header                                                             |
+| Sidebar/Layout     | Conventional Quasar: `QLayout` + `QDrawer` (estilo novo liberado pelo usuário); breadcrumb no header; drawer também navega no mobile (overlay)                   |
 | Validação de forms | Regras nativas do Quasar (`:rules`) reaproveitando `utils/validators.ts` (assinatura `(v) => true \| string` é compatível); vee-validate descartado              |
 | Ícones             | Font Awesome 7 via `@quasar/extras` (classes `fa-solid`/`fa-regular` preservadas)                                                                                |
 | Rotas              | Filename-based mantido; navegação por path (`/login`, `/auth`, `/patients`...). Guard de auth em `router/index.ts`                                               |
@@ -60,8 +60,8 @@
 
 ### Fase 1 — Layout + Sidebar ✅ (concluída)
 
-- [x] `components/layout/AppLayout.vue`: `QLayout`; `QDrawer` lateral escuro flutuante (desktop ≥768px) com logo, `QList`/`QItem`, `QExpansionItem` Cadastros e logout com `QTooltip`
-- [x] Navegação mobile (<768px): `QFooter` com botões + `QBtnDropdown` para Cadastros
+- [x] `components/layout/AppLayout.vue`: `QLayout`; `QDrawer` lateral escuro flutuante com logo, `QList`/`QItem`, `QExpansionItem` Cadastros e logout com `QTooltip`
+- [x] Navegação mobile (<768px): o mesmo `QDrawer` em modo overlay, aberto pelo botão de menu no `QHeader` (sem barra inferior)
 - [x] Breadcrumb no `QHeader` (Home › título via prop `title` do layout)
 - [x] Guard de autenticação em `router/index.ts` (públicas: `/login`, `/auth`; sem token → `/auth`; logado nas públicas → `/`)
 - [x] Página Home mínima usando o layout (validada com `build`)
@@ -143,6 +143,7 @@ npm run dev            # validação visual
 - **Pinia sem instância ativa** (`getActivePinia() was called...`): a CLI só instala o Pinia quando existe `src/stores/index.ts`; ao criar/remover, limpar `.quasar` e regerar.
 - **Erros de lint no VSCode** ("Cannot find module 'vue'...", "defineOptions"): o `.vscode/settings.json` do scaffold usava a chave inválida `js/ts.tsdk.path`; corrigido para `typescript.tsdk`. No VSCode: aceitar o prompt "Use Workspace Version" (ou `Ctrl+Shift+P` → _TypeScript: Select TypeScript Version_ → **Use Workspace Version**) e garantir a extensão **Vue - Official (Volar)** instalada; depois reiniciar o TS Server.
 - **Sidebar toda branca**: os estilos do layout estavam em `<style scoped>` e não venciam o CSS nativo do Quasar (`.q-drawer` tem fundo próprio `#fff`). Corrigido movendo os estilos do layout para o escopo global (`css/app.scss`) com especificidade `.q-drawer.app-drawer`, além da prop nativa `dark` no drawer. **Regra do projeto**: estilos que atingem componentes Quasar (drawer, header, footer, modais) vão em `app.scss`; `<style scoped>` só para elementos DOM puros.
+- **Sidebar aparecendo no mobile**: com `v-model` do `QDrawer` iniciado em `true`, o drawer ignora o `breakpoint` e abre como overlay no mobile (a prop `breakpoint` só troca o modo, não esconde). O estado passou a ser controlado no `AppLayout` (`MOBILE_BREAKPOINT = 768`, `watch(isMobile)`), com `show-if-above` evitado de propósito: ele emite `modelValue: true` no desktop e deixaria o ícone do botão dessincronizado ao redimensionar. A barra inferior (`QFooter`) foi removida — a navegação é só o drawer, o que também deixou `/credentials` acessível no mobile. Atenção: `$q.screen.lt.md` é **1024px**, não 768px; o mesmo valia para o footer.
 
 ## Próximo passo
 

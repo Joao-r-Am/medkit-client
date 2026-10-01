@@ -6,7 +6,8 @@
         <p class="text-caption text-grey-6"> Bem-vindo, {{ userName }} </p>
       </div>
 
-      <div class="row q-col-gutter-md">
+      <AppSkeletonCards v-if="isLoading" />
+      <div v-else class="row q-col-gutter-md">
         <div class="col-12 col-sm-6">
           <q-card
             flat
@@ -95,15 +96,17 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import AppLayout from "@/components/layout/AppLayout.vue";
+import AppSkeletonCards from "@/components/feedback/AppSkeletonCards.vue";
 import type { IAppointment, IPatient } from "@/interfaces/models";
-import services from "@/services";
+import { loadDashboard } from "@/services/queries";
+import { useNavigate } from "@/utils/navigate";
 import toasty from "@/utils/toast";
 
 defineOptions({ name: "HomePage" });
 
-const router = useRouter();
+const { navigate } = useNavigate();
+const isLoading = ref(true);
 const patients = ref<IPatient[]>([]);
 const appointments = ref<IAppointment[]>([]);
 
@@ -124,19 +127,18 @@ const userName = computed(() => {
 });
 
 function go(to: string) {
-  void router.push(to);
+  void navigate(to);
 }
 
 async function loadData() {
   try {
-    const [pData, aData] = await Promise.all([
-      services.patients.getAll(),
-      services.appointments.getAll()
-    ]);
-    patients.value = pData;
-    appointments.value = aData;
+    const data = await loadDashboard();
+    patients.value = data.patients as unknown as IPatient[];
+    appointments.value = data.appointments as unknown as IAppointment[];
   } catch (error) {
-    toasty.errorToasty({ msg: "", title: "Erro ao carregar dados" }, error);
+    toasty.errorToasty({ title: "Erro ao carregar dados" }, error);
+  } finally {
+    isLoading.value = false;
   }
 }
 

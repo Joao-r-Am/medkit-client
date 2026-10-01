@@ -44,7 +44,6 @@ export default {
       cnpjf
     });
     let error: AuthError = null;
-    console.log(response.data);
     if (!response.data) {
       error = {
         status: response.request.status,

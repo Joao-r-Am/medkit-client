@@ -6,7 +6,7 @@
       icon="fa-solid fa-microscope"
       :columns="columns"
       empty-message="Nenhum exame cadastrado."
-      :fetch-data="services.exams.getAll"
+      :fetch-data="loadExams"
     >
       <template #header-actions>
         <q-btn
@@ -72,6 +72,7 @@ import RegistrationsList from "@/components/registrations/RegistrationsList.vue"
 import ModalExamEdit from "@/components/modals/ModalExamEdit.vue";
 import { confirmDelete } from "@/utils/confirm";
 import services from "@/services";
+import { invalidate, loadExams } from "@/services/queries";
 import toasty from "@/utils/toast";
 
 defineOptions({ name: "RegistrationsExamsPage" });
@@ -113,6 +114,7 @@ const columns: QTableColumn[] = [
 ];
 
 function refresh() {
+  invalidate("registrations:exams");
   void registrationsList.value?.reload();
 }
 

@@ -38,6 +38,7 @@ function createWrapper(props: Record<string, unknown> = {}) {
             "type",
             "mask",
             "unmaskedValue",
+            "maxlength",
             "placeholder",
             "class"
           ],
@@ -460,6 +461,17 @@ describe("CreateAccountForm", () => {
       await cnpjfInput!.trigger("input");
 
       expect(formatDocument).toHaveBeenCalled();
+    });
+
+    it("limita o documento a 14 dígitos", async () => {
+      const wrapper = createWrapper();
+
+      const cnpjfInput = wrapper.findAll("input")[5]!;
+
+      await cnpjfInput!.setValue("12345678901234567890");
+      await cnpjfInput!.trigger("input");
+
+      expect(cnpjfInput!.element.value).toBe("12.345.678/9012-34");
     });
   });
 
