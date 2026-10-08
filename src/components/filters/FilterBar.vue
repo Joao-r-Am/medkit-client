@@ -34,8 +34,6 @@
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: "FilterBar" });
-
 withDefaults(
   defineProps<{
     // true = dentro do menu mobile (sem o "chrome" cinza da barra solta)
