@@ -2,12 +2,7 @@
   <AppLayout title="Pacientes">
     <div class="app-page-content col flex column">
       <div class="row items-center justify-between q-mb-md q-gutter-y-sm">
-        <div>
-          <h1 class="app-page-content__title">Pacientes</h1>
-          <p class="app-page-content__subtitle">
-            Gerencie os pacientes cadastrados no sistema
-          </p>
-        </div>
+        <div></div>
         <q-btn
           unelevated
           no-caps

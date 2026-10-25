@@ -6,40 +6,20 @@
       <!--
         Título + ações com flex gap (não os gutters do Quasar: gap cria espaço
         real, sem margem negativa nem padding dentro do q-btn).
-        Desktop (≥1024px): 2 botões sempre visíveis + barra de filtros no
-        fluxo. Mobile (<1024px): tudo num menu só (⋮) — devolve ~150px de
-        altura para o calendário e a agenda semanal ocuparem a tela.
+        Desktop (≥1024px): barra de filtros logo abaixo do título e os 2
+        botões sempre visíveis embaixo dela, alinhados à direita.
+        Mobile (<1024px): tudo num menu só (⋮) — devolve ~150px de altura
+        para o calendário e a agenda semanal ocuparem a tela.
       -->
       <div class="page-header">
-        <h1 class="app-page-content__title">Agendamentos</h1>
-
-        <div v-if="!isMobile" class="page-header__actions">
-          <q-btn
-            unelevated
-            no-caps
-            icon="fa-solid fa-plus"
-            label="Novo Agendamento"
-            class="app-btn-primary"
-            @click="createAppointment()"
-          />
-          <q-btn
-            unelevated
-            no-caps
-            outline
-            color="dark"
-            icon="fa-solid fa-link"
-            label="Enviar Convite"
-            @click="openInviteModal()"
-          />
-        </div>
-
         <q-btn-dropdown
-          v-else
+          v-if="isMobile"
           ref="actionsMenuRef"
+          class="w-100"
           flat
-          round
           dense
-          icon="fa-solid fa-ellipsis-vertical"
+          label="Ações e filtros"
+          icon="fa-solid fa-gear"
           toggle-aria-label="Ações e filtros"
           content-class="app-appointments-menu"
         >
@@ -83,6 +63,26 @@
         />
         <FilterDateRange v-model="dateRange" />
       </FilterBar>
+
+      <div v-if="!isMobile" class="page-header__actions">
+        <q-btn
+          unelevated
+          no-caps
+          icon="fa-solid fa-plus"
+          label="Novo Agendamento"
+          class="app-btn-primary"
+          @click="createAppointment()"
+        />
+        <q-btn
+          unelevated
+          no-caps
+          outline
+          color="dark"
+          icon="fa-solid fa-link"
+          label="Enviar Convite"
+          @click="openInviteModal()"
+        />
+      </div>
 
       <q-tabs
         :model-value="activeTab"
@@ -145,8 +145,8 @@
           <WeeklyAgenda
             v-show="!loadingTabs.semana"
             :appointments="weeklyAppointments"
-            @edit="editAppointmentFromWeek"
-            @remove="deleteAppointmentFromWeek"
+            @edit="editAppointment"
+            @remove="deleteAppointment"
             @create="createForWeekDay"
             @week-change="onWeekChange"
           />
@@ -301,45 +301,21 @@ function createFromSlot(slot: Record<string, unknown>) {
   });
 }
 
-function editAppointment(data: Record<string, unknown>) {
+function editAppointment(data: CalendarAppointment | Record<string, unknown>) {
   openAppointmentModal({
-    appointment_id: data.id as string,
+    appointment_id: String(data.id),
     title: "Editar Agendamento"
   });
 }
 
-function editAppointmentFromWeek(appt: CalendarAppointment) {
-  openAppointmentModal({
-    appointment_id: appt.id,
-    title: "Editar Agendamento"
-  });
-}
-
-async function deleteAppointment(data: Record<string, unknown>) {
+async function deleteAppointment(
+  data: CalendarAppointment | Record<string, unknown>
+) {
   const confirmed = await confirmDelete("Excluir este agendamento?");
   if (!confirmed) return;
 
   try {
     await services.appointments.destroy(String(data.id));
-    toasty.successToasty({
-      title: "Agendamento excluído com sucesso!",
-      msg: "Sucesso"
-    });
-    refetchAll();
-  } catch (err) {
-    toasty.errorToasty(
-      { title: "Erro ao excluir agendamento", msg: "Erro" },
-      err
-    );
-  }
-}
-
-async function deleteAppointmentFromWeek(appt: CalendarAppointment) {
-  const confirmed = await confirmDelete("Excluir este agendamento?");
-  if (!confirmed) return;
-
-  try {
-    await services.appointments.destroy(appt.id);
     toasty.successToasty({
       title: "Agendamento excluído com sucesso!",
       msg: "Sucesso"
@@ -505,9 +481,12 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+// Ações abaixo da FilterBar: linha própria, encostadas à direita
 .page-header__actions {
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
+  margin: 16px 0;
 }
 
 // O painel ativo preenche a área restante; o scroll fica dentro de cada

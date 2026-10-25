@@ -12,9 +12,9 @@
           <p class="app-cell__primary">
             {{ cellProps.row.patient?.name ?? "-" }}
           </p>
-          <p class="app-cell__secondary">{{
-            cellProps.row.patient?.phone ?? ""
-          }}</p>
+          <p class="app-cell__secondary">
+            {{ cellProps.row.patient?.phone ?? "" }}
+          </p>
         </q-td>
       </template>
 
@@ -75,9 +75,9 @@
       </template>
     </AppTable>
 
-    <p v-if="!loading" class="text-caption text-grey-5 q-mt-sm">
+    <!-- <p v-if="!loading" class="text-caption text-grey-5 q-mt-sm">
       Exibindo {{ shownRangeLabel }}
-    </p>
+    </p> -->
   </div>
 </template>
 

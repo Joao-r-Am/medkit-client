@@ -262,6 +262,7 @@ function buildPayload(): SchedulingInvitePayload {
 async function generate() {
   try {
     invite.value = await services.schedulingInvites.create(buildPayload());
+    console.log(invite.value.url);
     advancedTouched.value = false;
   } catch (err) {
     toasty.errorToasty(
