@@ -1,5 +1,5 @@
 <template>
-  <div class="flex column full-height app-table-frame">
+  <div class="flex column full-height app-table-frame appointments-table">
     <AppTable
       ref="tableRef"
       class="col"
@@ -12,9 +12,9 @@
           <p class="app-cell__primary">
             {{ cellProps.row.patient?.name ?? "-" }}
           </p>
-          <p class="app-cell__secondary">{{
-            cellProps.row.patient?.phone ?? ""
-          }}</p>
+          <p class="app-cell__secondary">
+            {{ cellProps.row.patient?.phone ?? "" }}
+          </p>
         </q-td>
       </template>
 
@@ -75,9 +75,9 @@
       </template>
     </AppTable>
 
-    <p v-if="!loading" class="text-caption text-grey-5 q-mt-sm">
+    <!-- <p v-if="!loading" class="text-caption text-grey-5 q-mt-sm">
       Exibindo {{ shownRangeLabel }}
-    </p>
+    </p> -->
   </div>
 </template>
 
@@ -145,6 +145,12 @@ const shownRangeLabel = computed(() => {
 </script>
 
 <style scoped lang="scss">
+// Altura mínima para telas desktop baixas: abaixo dela o painel da aba
+// (overflow-y) permite descer até o paginador em vez de espremer as linhas.
+.appointments-table {
+  min-height: 480px;
+}
+
 .app-cell__primary {
   margin: 0;
   font-weight: 500;

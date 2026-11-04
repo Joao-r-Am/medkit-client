@@ -473,7 +473,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 12px;
   height: 100%;
-  min-height: 0;
+  // Altura mínima em telas desktop baixas: a grade de horas continua com
+  // scroll interno e o painel da aba rola até o fim quando a janela é menor.
+  min-height: 520px;
   background: #fff;
   border-radius: 12px;
   border: 1px solid var(--app-border);

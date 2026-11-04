@@ -1,10 +1,7 @@
 <template>
   <div class="app-registrations col flex column">
     <div class="row items-center justify-between q-mb-md q-gutter-y-sm">
-      <div>
-        <h1 class="app-registrations__title">{{ title }}</h1>
-        <p class="app-registrations__subtitle">Cadastros da clínica</p>
-      </div>
+      <div></div>
       <slot name="header-actions" />
     </div>
 

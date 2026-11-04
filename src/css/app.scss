@@ -139,7 +139,7 @@ body {
 
 .app-page-content__title {
   margin: 0;
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-size: clamp(0.5rem, 3vw, 1.3rem);
   font-weight: 700;
   letter-spacing: -0.025em;
   color: #111827;
@@ -283,4 +283,8 @@ body {
 .q-menu.app-appointments-menu {
   min-width: min(92vw, 360px);
   border-radius: 12px;
+}
+
+.w-100 {
+  width: 100%;
 }

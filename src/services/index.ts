@@ -7,6 +7,7 @@ import ExamService from "./exams";
 import ProcedureService from "./procedures";
 import ScheduleSlotService from "./schedule-slots";
 import SchedulingInvitesService from "./scheduling-invites";
+import ClinicsService from "./clinics";
 
 export default {
   auth: AuthService,
@@ -17,5 +18,6 @@ export default {
   exams: ExamService,
   procedures: ProcedureService,
   scheduleSlots: ScheduleSlotService,
-  schedulingInvites: SchedulingInvitesService
+  schedulingInvites: SchedulingInvitesService,
+  clinics: ClinicsService
 };
