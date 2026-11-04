@@ -496,10 +496,13 @@ onMounted(() => {
   flex-direction: column;
 }
 
+// Em telas desktop baixas os componentes crescem até seu min-height e o
+// painel da aba rola (overflow-y) — título, filtros e tabs continuam fixos.
 :deep(.q-tab-panel) {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .remove-margin {

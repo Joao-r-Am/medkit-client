@@ -366,12 +366,13 @@ function goToday() {
 .calendar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  // Trava a linha na altura disponível; sem isso o conteúdo estoura e o
-  // tab-panel (overflow: hidden) corta as últimas semanas do mês.
+  // Trava a linha na altura disponível; min-height garante 6 semanas +
+  // header legíveis em telas desktop baixas (o painel da aba rola abaixo
+  // disso em vez de espremer as células).
   grid-template-rows: minmax(0, 1fr);
   gap: 20px;
   height: 100%;
-  min-height: 0;
+  min-height: 600px;
 
   // 1023.98px = mesmo corte do breakpoint md (1024px) do Quasar: abaixo dele
   // a grade ocupa a tela inteira (flex column) e a agenda do dia sobe como

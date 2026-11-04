@@ -1,5 +1,5 @@
 <template>
-  <div class="flex column full-height app-table-frame">
+  <div class="flex column full-height app-table-frame appointments-table">
     <AppTable
       ref="tableRef"
       class="col"
@@ -145,6 +145,12 @@ const shownRangeLabel = computed(() => {
 </script>
 
 <style scoped lang="scss">
+// Altura mínima para telas desktop baixas: abaixo dela o painel da aba
+// (overflow-y) permite descer até o paginador em vez de espremer as linhas.
+.appointments-table {
+  min-height: 480px;
+}
+
 .app-cell__primary {
   margin: 0;
   font-weight: 500;

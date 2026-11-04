@@ -120,7 +120,7 @@ defineExpose({
   }
 
   :deep(tbody td) {
-    padding: 10px 12px;
+    padding: 16px 12px;
     font-size: 0.8125rem;
     color: #1f1f1f;
   }
