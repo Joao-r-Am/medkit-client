@@ -125,6 +125,7 @@ import {
 import services from "@/services";
 import { EspecialtyAreaList } from "@/interfaces/users";
 import { useUserStore } from "@/stores/user";
+import { useClinicStore } from "@/stores/clinic";
 
 defineOptions({ name: "CreateAccountForm" });
 
@@ -137,6 +138,7 @@ const emit = defineEmits<{
 const $q = useQuasar();
 const router = useRouter();
 const userStore = useUserStore();
+const clinicStore = useClinicStore();
 
 const areaOptions = ref([...EspecialtyAreaList]);
 
@@ -174,29 +176,7 @@ function onDocumentInput(value: string | number | null) {
   state.cnpjf.value = formatDocument(String(value ?? ""));
 }
 
-/** Faz login automático logo após o cadastro. */
-async function login({ email, password }: { email: string; password: string }) {
-  const { data, error } = await services.auth.login({
-    identificator: email,
-    password
-  });
-
-  if (!error) {
-    window.localStorage.setItem("token", data.data.token);
-    $q.notify({
-      type: "positive",
-      message: "Conta criada!",
-      caption: "Bem-vindo(a) ao MedKit!",
-      timeout: 3000
-    });
-    await router.push("/patients");
-    emit("created");
-    return true;
-  }
-  return false;
-}
-
-/** Cadastra o usuário e, se der certo, entra automaticamente. */
+/** Cadastra o usuário e, com o cadastro feito, resolve o contexto de clínica. */
 async function handleSubmit() {
   try {
     const { data, error } = await services.auth.register({
@@ -204,7 +184,6 @@ async function handleSubmit() {
       lastname: state.lastname.value,
       especialty_area: String(state.especialty_area.value),
       email: state.email.value,
-      access_type: 3,
       password: state.password.value,
       phone: state.phone.value,
       cnpjf: state.cnpjf.value.replace(/\D/g, "")
@@ -216,10 +195,27 @@ async function handleSubmit() {
         message: "Ocorreu um erro ao criar a conta",
         timeout: 3000
       });
+      return;
     }
 
-    window.localStorage.setItem("token", data.data.token);
-    userStore.setCurrentUser(data.data);
+    const userData = data.data;
+    if (!userData?.token) {
+      $q.notify({
+        type: "negative",
+        message: "Ocorreu um erro ao criar a conta",
+        caption: "Resposta inesperada do servidor",
+        timeout: 3000
+      });
+      return;
+    }
+
+    window.localStorage.setItem("token", userData.token);
+    userStore.setCurrentUser(userData);
+
+    // Fluxo 0/1/n: conta nova ainda não tem clínica — vai para /clinics,
+    // onde o novo usuário (futuro owner) cria a própria clínica.
+    const target = await clinicStore.resolveClinicRoute();
+    await router.push(target);
 
     $q.notify({
       type: "positive",
@@ -227,7 +223,6 @@ async function handleSubmit() {
       caption: "Bem-vindo(a) ao MedKit!",
       timeout: 3000
     });
-    await router.push("/");
     emit("created");
     return true;
   } catch (err) {

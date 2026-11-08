@@ -158,6 +158,66 @@
             <span v-else class="app-breadcrumb__current">{{ item.label }}</span>
           </template>
         </nav>
+        <q-toolbar-title />
+        <!-- Menu do usuário: perfil, troca de clínica e logout. -->
+        <q-btn-dropdown flat no-caps dense data-test="user-menu">
+          <template #label>
+            <div class="row items-center no-wrap q-gutter-x-sm">
+              <q-avatar
+                size="34px"
+                color="primary"
+                text-color="white"
+                class="text-weight-bold"
+              >
+                {{ userInitials }}
+              </q-avatar>
+              <div class="text-left">
+                <div class="text-body2 text-weight-medium text-grey-9">
+                  {{ userName }}
+                </div>
+                <div class="text-caption text-grey-7">
+                  {{ activeClinicName }}
+                </div>
+              </div>
+            </div>
+          </template>
+          <q-list padding style="min-width: 210px">
+            <q-item
+              clickable
+              v-close-popup
+              data-test="menu-profile"
+              @click="navigate('/profile')"
+            >
+              <q-item-section avatar>
+                <q-icon name="fas fa-address-card" size="1rem" />
+              </q-item-section>
+              <q-item-section>Perfil</q-item-section>
+            </q-item>
+            <q-item
+              clickable
+              v-close-popup
+              data-test="menu-clinics"
+              @click="navigate('/clinics')"
+            >
+              <q-item-section avatar>
+                <q-icon name="fas fa-hospital" size="1rem" />
+              </q-item-section>
+              <q-item-section>Clínicas</q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item
+              clickable
+              v-close-popup
+              data-test="menu-logout"
+              @click="handleLogout"
+            >
+              <q-item-section avatar>
+                <q-icon name="fas fa-sign-out-alt" size="1rem" />
+              </q-item-section>
+              <q-item-section>Sair</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-toolbar>
     </q-header>
 
@@ -178,6 +238,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useUserStore } from "@/stores/user";
+import { useClinicStore } from "@/stores/clinic";
 import { useNavigate } from "@/utils/navigate";
 import logoUrl from "@/assets/images/logo-small.png";
 
@@ -191,13 +252,14 @@ const props = withDefaults(
   defineProps<{
     title?: string;
   }>(),
-  { title: "" }
+  { title: "" },
 );
 
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 const userStore = useUserStore();
+const clinicStore = useClinicStore();
 const { navigate } = useNavigate();
 
 const isMobile = computed(() => $q.screen.width < MOBILE_BREAKPOINT);
@@ -208,10 +270,10 @@ const isMobile = computed(() => $q.screen.width < MOBILE_BREAKPOINT);
 const sidebarOpen = ref(false);
 watch(
   isMobile,
-  mobile => {
+  (mobile) => {
     sidebarOpen.value = !mobile;
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Trava a altura da página na área visível (mesma fórmula do default do
@@ -223,22 +285,40 @@ function pageStyleFn(offset: number, height: number) {
 
 const userName = computed(() => userStore.state.currentUser.name || "...");
 
+// Iniciais para o avatar placeholder (não há imagem no modelo de usuário).
+const userInitials = computed(() => {
+  const parts = String(userStore.state.currentUser.name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const initials = parts
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");
+  return initials || "?";
+});
+
+const activeClinicName = computed(
+  () =>
+    clinicStore.state.activeContext?.clinic?.name ?? "Nenhuma clínica ativa",
+);
+
 const registrationItems = [
   {
     to: "/registrations/professionals",
     icon: "fa-solid fa-user-doctor",
-    label: "Médicos / Profissionais"
+    label: "Médicos / Profissionais",
   },
   {
     to: "/registrations/procedures",
     icon: "fa-solid fa-syringe",
-    label: "Procedimentos"
+    label: "Procedimentos",
   },
   {
     to: "/registrations/exams",
     icon: "fa-solid fa-microscope",
-    label: "Exames"
-  }
+    label: "Exames",
+  },
 ];
 
 const breadcrumbItems = computed(() => {
@@ -256,10 +336,11 @@ const breadcrumbItems = computed(() => {
 
 function handleLogout() {
   userStore.cleanCurrentUser();
+  clinicStore.$reset();
   $q.notify({
     type: "info",
     message: "Sessão encerrada",
-    timeout: 2000
+    timeout: 2000,
   });
   void router.push("/auth");
 }

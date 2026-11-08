@@ -6,6 +6,8 @@ import {
   createWebHashHistory,
   createWebHistory
 } from "vue-router";
+import { resolveNavigationGuard } from "./guards";
+import { notifyClinicContextRequired } from "./clinic-context-notify";
 
 /*
  * If not building with SSR mode, you can
@@ -33,24 +35,20 @@ export default defineRouter((/* { store, ssrContext } */) => {
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   });
 
-  // Guarda de autenticação: rotas fora da lista pública exigem token.
-  const PUBLIC_PATHS = ["/login", "/auth"];
-  const PUBLIC_PREFIXES = ["/to-schedule/"];
-
+  // Guarda de autenticação + contexto de clínica (ver src/router/guards.ts).
   Router.beforeEach(to => {
-    const isPublic =
-      PUBLIC_PATHS.includes(to.path) ||
-      PUBLIC_PREFIXES.some(prefix => to.path.startsWith(prefix));
-    const hasToken = Boolean(window.localStorage.getItem("token"));
+    const redirectPath = resolveNavigationGuard({
+      path: to.path,
+      hasToken: Boolean(window.localStorage.getItem("token")),
+      hasClinicContext: Boolean(window.localStorage.getItem("clinic"))
+    });
 
-    if (!isPublic && !hasToken) {
-      return "/auth";
+    if (redirectPath === "/profile" && to.path !== "/profile") {
+      // Tela que exige clínica ativa: avisa antes de levar ao perfil.
+      notifyClinicContextRequired();
     }
 
-    const isBookingLink = to.path.startsWith("/to-schedule/");
-    if (isPublic && hasToken && !isBookingLink) {
-      return "/";
-    }
+    return redirectPath;
   });
 
   // enable HMR for it
