@@ -197,9 +197,11 @@ describe("CreateAccountForm", () => {
         expect.objectContaining({
           name: "Maria",
           lastname: "Silva",
-          email: "maria@email.com",
-          access_type: 3
+          email: "maria@email.com"
         })
+      );
+      expect(registerMock).toHaveBeenCalledWith(
+        expect.not.objectContaining({ access_type: expect.anything() })
       );
     });
 
@@ -250,6 +252,27 @@ describe("CreateAccountForm", () => {
       await flushPromises();
 
       expect(pushMock).toHaveBeenCalledWith("/");
+    });
+
+    it("conta nova ainda sem clínica vai para /clinics (criar clínica)", async () => {
+      const { resolveClinicRouteMock } = await import("@/__tests__/setup");
+      resolveClinicRouteMock.mockResolvedValue("/clinics");
+
+      registerMock.mockResolvedValue({
+        data: { data: { token: "tok" } },
+        error: null
+      });
+
+      const wrapper = createWrapper();
+      await fillAllFields(wrapper);
+
+      const form = wrapper.find("form");
+      await form.trigger("submit");
+      await flushPromises();
+
+      expect(pushMock).toHaveBeenCalledWith("/clinics");
+
+      resolveClinicRouteMock.mockResolvedValue("/");
     });
 
     it("emite 'created' após cadastro", async () => {
@@ -414,9 +437,9 @@ describe("CreateAccountForm", () => {
       expect(localStorage.getItem("token")).toBe("reg-token");
     });
 
-    it("mesmo com erro da API, handleSubmit continua e navega para /", async () => {
+    it("com erro da API, interrompe e NÃO navega (não truca token/greeting)", async () => {
       registerMock.mockResolvedValue({
-        data: { data: { token: "reg-token" } },
+        data: { data: {} },
         error: { status: 400, statusText: "Bad Request" }
       });
 
@@ -430,8 +453,8 @@ describe("CreateAccountForm", () => {
       expect(notifyMock).toHaveBeenCalledWith(
         expect.objectContaining({ type: "warning" })
       );
-      expect(pushMock).toHaveBeenCalledWith("/");
-      expect(wrapper.emitted("created")).toBeTruthy();
+      expect(pushMock).not.toHaveBeenCalled();
+      expect(wrapper.emitted("created")).toBeFalsy();
     });
 
     it("não navega quando exceção é lançada no register", async () => {

@@ -246,6 +246,20 @@ describe("LoginForm", () => {
       );
     });
 
+    it("usa a rota devolvida pelo resolveClinicRoute (0/n vínculos → /clinics)", async () => {
+      const { resolveClinicRouteMock } = await import("@/__tests__/setup");
+      resolveClinicRouteMock.mockResolvedValue("/clinics");
+
+      const wrapper = createWrapper();
+      await advanceToPasswordStep(wrapper);
+      await submitPassword(wrapper);
+      await flushPromises();
+
+      expect(pushMock).toHaveBeenCalledWith("/clinics");
+
+      resolveClinicRouteMock.mockResolvedValue("/");
+    });
+
     it("chama setCurrentUser com dados do usuário", async () => {
       const userData = { token: "tok", name: "Maria", email: "m@e.com" };
       loginMock.mockResolvedValue({
