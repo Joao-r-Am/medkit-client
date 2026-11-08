@@ -25,6 +25,7 @@ export const useUserStore = defineStore("user", () => {
     state.currentUser = {};
     window.localStorage.removeItem("token");
     window.localStorage.removeItem("user");
+    window.localStorage.removeItem("clinic");
   };
 
   const setCurrentUser = (user: CurrentUser) => {

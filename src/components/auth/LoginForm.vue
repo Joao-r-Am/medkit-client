@@ -104,12 +104,14 @@ import {
 } from "@/utils/validators";
 import services from "@/services";
 import { useUserStore } from "@/stores/user";
+import { useClinicStore } from "@/stores/clinic";
 
 defineOptions({ name: "LoginForm" });
 
 const router = useRouter();
 const $q = useQuasar();
 const userStore = useUserStore();
+const clinicStore = useClinicStore();
 
 type Step = "identify" | "password";
 
@@ -234,7 +236,10 @@ async function handleSubmit() {
       window.localStorage.setItem("token", token);
       userStore.setCurrentUser(data.data);
 
-      await router.push("/");
+      // Fluxo 0/1/n: entra direto se existe um único vínculo ativo; senão
+      // vai para /clinics (escolher ou criar).
+      const target = await clinicStore.resolveClinicRoute();
+      await router.push(target);
       $q.notify({
         type: "positive",
         message: "Login efetuado com sucesso!",

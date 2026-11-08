@@ -1,14 +1,23 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { notifyMock, pushMock, selectClinicMock } from "@/__tests__/setup";
 import { MembershipStatus } from "@/interfaces/clinic";
 
 const { myClinicsMock } = vi.hoisted(() => ({
   myClinicsMock: vi.fn()
 }));
 
+// O setup global mocka o store; a página usa o store real.
+vi.mock("@/stores/clinic", async importOriginal => ({
+  ...(await importOriginal())
+}));
+
 vi.mock("@/services", () => ({
-  default: { clinics: { myClinics: myClinicsMock } }
+  default: {
+    clinics: { myClinics: myClinicsMock },
+    auth: { selectClinic: selectClinicMock }
+  }
 }));
 
 vi.mock("@/components/layout/AppLayout.vue", () => ({
@@ -67,6 +76,8 @@ describe("pages/clinics", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     myClinicsMock.mockReset();
+    selectClinicMock.mockReset();
+    localStorage.clear();
   });
 
   it("mostra skeletons enquanto carrega", async () => {
@@ -137,6 +148,66 @@ describe("pages/clinics", () => {
     await flushPromises();
 
     expect(myClinicsMock).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it("mostra o banner de seleção com mais de um vínculo ativo", async () => {
+    myClinicsMock.mockResolvedValue([
+      membership("Clínica Alpha"),
+      membership("Clínica Beta")
+    ]);
+
+    const wrapper = await mountPage();
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Selecione uma das suas clínicas ativas");
+    wrapper.unmount();
+  });
+
+  it("sem pendência (um vínculo) não mostra o banner", async () => {
+    myClinicsMock.mockResolvedValue([membership("Clínica Alpha")]);
+
+    const wrapper = await mountPage();
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain(
+      "Selecione uma das suas clínicas ativas"
+    );
+    expect(wrapper.text()).toContain("Entrar");
+    wrapper.unmount();
+  });
+
+  it("botão Entrar seleciona o vínculo e navega para /", async () => {
+    myClinicsMock.mockResolvedValue([membership("Clínica Alpha")]);
+    selectClinicMock.mockResolvedValue({
+      data: {
+        data: {
+          token: "tenant",
+          membership_id: "m-Clínica Alpha",
+          clinic_id: "c-Clínica Alpha",
+          clinic: { id: "c-Clínica Alpha" }
+        }
+      },
+      error: null
+    });
+
+    const wrapper = await mountPage();
+    await flushPromises();
+
+    const enterButton = wrapper
+      .findAll("button")
+      .find(button => button.text().includes("Entrar"))!;
+    await enterButton.trigger("click");
+    await flushPromises();
+
+    expect(selectClinicMock).toHaveBeenCalledWith({
+      membership_id: "m-Clínica Alpha"
+    });
+    expect(localStorage.getItem("token")).toBe("tenant");
+    expect(pushMock).toHaveBeenCalledWith("/");
+    expect(notifyMock).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "positive" })
+    );
     wrapper.unmount();
   });
 });
