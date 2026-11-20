@@ -66,4 +66,27 @@ describe("services/clinics", () => {
 
     await expect(clinics.myClinics()).rejects.toThrow("403");
   });
+
+  it("lookupCnpj consulta a rota de conta com só os dígitos do CNPJ", async () => {
+    const lookup = {
+      cnpjf: "12345678000195",
+      name: "Clínica Receita",
+      email: "contato@clinica.com.br",
+      phone: "51999999999",
+      address: {
+        street: "Rua das Clínicas",
+        city: "Porto Alegre",
+        state: "RS",
+        country: "Brasil"
+      }
+    };
+    getMock.mockResolvedValue({ data: lookup });
+
+    const clinics = await loadService();
+    const result = await clinics.lookupCnpj("12.345.678/0001-95");
+
+    expect(getMock).toHaveBeenCalledWith("/clinics/cnpj/12345678000195");
+    expect(result.name).toBe("Clínica Receita");
+    expect(result.address!.street).toBe("Rua das Clínicas");
+  });
 });

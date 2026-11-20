@@ -46,11 +46,20 @@ export function cached<T>(
 
 /** Descarta a chave e todas as derivadas (`prefixo:*`). */
 export function invalidate(prefix: string) {
-  // Remover durante a iteração de um Map é seguro: o iterador segue a ordem de
-  // inserção e não volta a chaves já visitadas.
+  // Remover durante a iteração de um Map é seguro: o iterador segue a ordem
+  // de inserção e não volta a chaves já visitadas.
   for (const key of cache.keys()) {
     if (key === prefix || key.startsWith(`${prefix}:`)) cache.delete(key);
   }
+}
+
+/**
+ * Descarta todo o cache. Usado na troca de clínica e no logout: as chaves
+ * atuais não carregam o `clinic_id`, então dado da clínica anterior não pode
+ * sobreviver à troca do contexto.
+ */
+export function clearCache(): void {
+  cache.clear();
 }
 
 const APPOINTMENT_PRELOAD = "patient,professional,exam,procedure";

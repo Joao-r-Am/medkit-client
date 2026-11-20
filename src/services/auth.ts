@@ -10,7 +10,6 @@ type RegisterPayload = {
   lastname: string;
   especialty_area: string;
   email: string;
-  access_type: number;
   password: string;
   phone: string;
   cnpjf: string;
@@ -21,6 +20,10 @@ type LoginPayload = {
   password: string;
 };
 
+type SelectClinicPayload = {
+  membership_id: string;
+};
+
 // TODO: tratar para quando o token expirar
 export default {
   register: async ({
@@ -28,7 +31,6 @@ export default {
     lastname,
     especialty_area,
     email,
-    access_type,
     password,
     phone,
     cnpjf
@@ -38,7 +40,6 @@ export default {
       lastname,
       especialty_area,
       email,
-      access_type,
       password,
       phone,
       cnpjf
@@ -78,6 +79,25 @@ export default {
   findByCnpjfOrUsername: async (payload: string) => {
     const response = await httpClient.post("/auth/find-by-cnjpf-username", {
       payload
+    });
+    let error: AuthError = null;
+
+    if (!response.data) {
+      error = {
+        status: response.request.status,
+        statusText: response.request.statusText
+      };
+    }
+    return {
+      data: response,
+      error
+    };
+  },
+
+  /** Emite um novo token já com o contexto da clínica escolhida. */
+  selectClinic: async ({ membership_id }: SelectClinicPayload) => {
+    const response = await httpClient.post("/auth/select-clinic", {
+      membership_id
     });
     let error: AuthError = null;
 

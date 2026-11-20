@@ -3,6 +3,7 @@ import type { InternalAxiosRequestConfig } from "axios";
 import httpClient from "@/services/http";
 import { reportBytes, startRequest, stopRequest } from "@/stores/global";
 import { useUserStore } from "@/stores/user";
+import { notifyClinicContextRequired } from "@/router/clinic-context-notify";
 
 /*
  * O id da transferência precisa sobreviver do interceptor de request ao de
@@ -55,6 +56,25 @@ export default defineBoot(({ router }) => {
 
       const status = error?.response?.status ?? error?.request?.status;
 
+      if (status === 403) {
+        const code = (error?.response?.data?.code as string) ?? "";
+        if (
+          code === "CLINIC_CONTEXT_REQUIRED" &&
+          router.currentRoute.value.path !== "/profile"
+        ) {
+          // Token de conta em endpoint que exige clínica ativa: volta ao
+          // perfil (com a aba de clínicas); o request segue rejeitado
+          // para o catch da página.
+          notifyClinicContextRequired();
+          if (!isRedirecting) {
+            isRedirecting = true;
+            void router.push("/profile").finally(() => {
+              isRedirecting = false;
+            });
+          }
+        }
+      }
+
       if (status === 0 || status === 500) {
         return Promise.reject(new Error(error.message));
       }
@@ -62,6 +82,7 @@ export default defineBoot(({ router }) => {
       if (status === 401) {
         window.localStorage.removeItem("token");
         window.localStorage.removeItem("user");
+        window.localStorage.removeItem("clinic");
         const userStore = useUserStore();
         userStore.cleanCurrentUser();
         if (!isRedirecting) {

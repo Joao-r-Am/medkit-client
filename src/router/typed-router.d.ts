@@ -45,6 +45,13 @@ declare module 'vue-router/auto-routes' {
       { path: ParamValue<false> },
       | never
     >,
+    '/accept-invite/[token]': RouteRecordInfo<
+      '/accept-invite/[token]',
+      '/accept-invite/:token',
+      { token: ParamValue<true> },
+      { token: ParamValue<false> },
+      | never
+    >,
     '/appointments': RouteRecordInfo<
       '/appointments',
       '/appointments',
@@ -87,6 +94,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/profile': RouteRecordInfo<
+      '/profile',
+      '/profile',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/registrations/exams': RouteRecordInfo<
       '/registrations/exams',
       '/registrations/exams',
@@ -104,6 +118,13 @@ declare module 'vue-router/auto-routes' {
     '/registrations/professionals': RouteRecordInfo<
       '/registrations/professionals',
       '/registrations/professionals',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/team': RouteRecordInfo<
+      '/team',
+      '/team',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -143,6 +164,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
+    }
+    'src/pages/accept-invite/[token].vue': {
+      routes:
+        | '/accept-invite/[token]'
+      views:
+        | never
+      pathParamNames:
+        | 'token'
     }
     'src/pages/appointments.vue': {
       routes:
@@ -192,6 +221,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/profile.vue': {
+      routes:
+        | '/profile'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/registrations/exams.vue': {
       routes:
         | '/registrations/exams'
@@ -211,6 +248,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/registrations/professionals.vue': {
       routes:
         | '/registrations/professionals'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/team.vue': {
+      routes:
+        | '/team'
       views:
         | never
       pathParamNames:

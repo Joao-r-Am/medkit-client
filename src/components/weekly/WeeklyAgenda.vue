@@ -32,9 +32,9 @@
         />
       </div>
       <!-- Abaixo de 1024px o título é o dia visível; acima, a semana -->
-      <h3 class="weekly-agenda__title">{{
-        isSingleDay ? dayLabel : weekLabel
-      }}</h3>
+      <h3 class="weekly-agenda__title">
+        {{ isSingleDay ? dayLabel : weekLabel }}
+      </h3>
     </div>
 
     <div ref="scrollRef" class="weekly-agenda__scroll">
@@ -49,7 +49,7 @@
           :key="`header-${toDateKey(day.date)}`"
           class="weekly-agenda__day-header"
           :class="{
-            'weekly-agenda__day-header--today': day.isToday
+            'weekly-agenda__day-header--today': day.isToday,
           }"
         >
           <span class="weekly-agenda__day-name">{{ day.name }}</span>
@@ -90,7 +90,7 @@
             :key="`half-${hour}`"
             class="weekly-agenda__half-hour-line"
             :style="{
-              top: hourToPixel(hour - startHour) + hourHeight / 2 + 'px'
+              top: hourToPixel(hour - startHour) + hourHeight / 2 + 'px',
             }"
           />
 
@@ -99,7 +99,7 @@
             :key="appt.id"
             class="weekly-agenda__event"
             :class="{
-              'weekly-agenda__event--cancelled': isCancelled(appt)
+              'weekly-agenda__event--cancelled': isCancelled(appt),
             }"
             :style="eventStyle(appt)"
             @click.stop="onEventClick(appt)"
@@ -147,14 +147,14 @@ import {
   ref,
   watch,
   onMounted,
-  onBeforeUnmount
+  onBeforeUnmount,
 } from "vue";
 import { useQuasar } from "quasar";
 import {
   professionalColor,
   readableTextColor,
   serviceLabel,
-  statusLabel
+  statusLabel,
 } from "@/utils/appointment-utils";
 import { formatTime, getWeekRange } from "@/utils/date";
 import type { WeekRange } from "@/utils/date";
@@ -197,7 +197,7 @@ const totalHeight = (endHour - startHour + 1) * hourHeight;
 const snapMinutes = 30;
 const hours = Array.from(
   { length: endHour - startHour + 1 },
-  (_, i) => startHour + i
+  (_, i) => startHour + i,
 );
 
 const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
@@ -218,7 +218,7 @@ const weekDays = computed<WeekDay[]>(() => {
       date,
       name: dayNames[i]!,
       number: date.getDate(),
-      isToday: dateKey === todayKey
+      isToday: dateKey === todayKey,
     });
   }
 
@@ -239,7 +239,7 @@ function todayIndexInWeek(): number {
   const key = toDateKey(new Date());
   return Math.max(
     0,
-    weekDays.value.findIndex(d => toDateKey(d.date) === key)
+    weekDays.value.findIndex((d) => toDateKey(d.date) === key),
   );
 }
 
@@ -255,7 +255,7 @@ const dayLabel = computed(() => {
   if (!day) return "";
   const date = day.date.toLocaleDateString("pt-BR", {
     day: "2-digit",
-    month: "short"
+    month: "short",
   });
   return `${day.name}, ${date.replace(".", "")}`;
 });
@@ -268,7 +268,7 @@ const weekLabel = computed(() => {
   const end = weekDays.value[6]!.date;
   const options: Intl.DateTimeFormatOptions = {
     day: "2-digit",
-    month: "short"
+    month: "short",
   };
   const startStr = start.toLocaleDateString("pt-BR", options);
   const endStr = end.toLocaleDateString("pt-BR", options);
@@ -286,10 +286,10 @@ const nowLineTop = computed(() => {
 
 watch(
   weekStart,
-  start => {
+  (start) => {
     emit("weekChange", getWeekRange(start));
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const appointmentsByDay = computed(() => {
@@ -306,7 +306,7 @@ const appointmentsByDay = computed(() => {
 function dayAppointments(date: Date) {
   const key = toDateKey(date);
   return (appointmentsByDay.value.get(key) ?? [])
-    .filter(appt => appt.startTime && appt.endTime)
+    .filter((appt) => appt.startTime && appt.endTime)
     .sort((a, b) => {
       return (
         new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime()
@@ -352,7 +352,7 @@ function eventStyle(appt: WeeklyAppointment) {
     height: height + "px",
     background: color,
     color: text,
-    borderLeft: `3px solid ${darkenColor(color)}`
+    borderLeft: `3px solid ${darkenColor(color)}`,
   };
 }
 
@@ -364,7 +364,7 @@ function darkenColor(hex: string) {
   r = Math.max(0, r - 30);
   g = Math.max(0, g - 30);
   b = Math.max(0, b - 30);
-  return `#${[r, g, b].map(c => c.toString(16).padStart(2, "0")).join("")}`;
+  return `#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function showNowLine(isToday: boolean) {
@@ -445,7 +445,7 @@ function scrollToNow() {
 
 // Ao entrar no modo dia (resize/mobile), volta para o dia de hoje e posiciona
 // a vista na hora atual.
-watch(isSingleDay, single => {
+watch(isSingleDay, (single) => {
   if (!single) return;
   mobileDayIndex.value = todayIndexInWeek();
   void nextTick(scrollToNow);
@@ -638,7 +638,7 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 4px;
   right: 4px;
-  padding: 4px 8px;
+  padding: 0px 0px 4px 4px;
   border-radius: 8px;
   font-size: 0.75rem;
   cursor: pointer;
@@ -666,7 +666,7 @@ onBeforeUnmount(() => {
 .weekly-agenda__event-time {
   font-weight: 700;
   display: block;
-  font-size: 0.6875rem;
+  font-size: 0.623rem;
 }
 
 .weekly-agenda__event-label {
@@ -675,7 +675,7 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.75rem;
-  margin-top: 2px;
+  margin-top: 0px;
 }
 
 .weekly-agenda__tooltip {
