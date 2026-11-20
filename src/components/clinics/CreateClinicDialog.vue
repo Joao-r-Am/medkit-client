@@ -194,6 +194,7 @@ import { computed, reactive, ref } from "vue";
 import { useQuasar } from "quasar";
 import services from "@/services";
 import { useClinicStore } from "@/stores/clinic";
+import { errorCodeOf } from "@/utils/api-error";
 import { formatDocument, stripDocumentFormatting } from "@/utils/validators";
 import type { IAddress, IClinic, ICreateClinic } from "@/interfaces/clinic";
 
@@ -336,13 +337,6 @@ async function lookupCnpjData(): Promise<void> {
   } finally {
     lookingUp.value = false;
   }
-}
-
-function errorCodeOf(error: unknown): string {
-  return (
-    (error as { response?: { data?: { code?: string } } }).response?.data
-      ?.code ?? ""
-  );
 }
 
 function lookupErrorMessage(error: unknown): string {

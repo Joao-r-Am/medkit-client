@@ -12,6 +12,13 @@ export const selectClinicMock = vi.fn();
 export const myClinicsMock = vi.fn();
 export const createClinicMock = vi.fn();
 export const resolveClinicRouteMock = vi.fn().mockResolvedValue("/");
+export const acceptInvitationMock = vi.fn().mockResolvedValue("/");
+export const invitationListMock = vi.fn();
+export const invitationCreateMock = vi.fn();
+export const invitationResendMock = vi.fn();
+export const invitationRevokeMock = vi.fn();
+export const invitationPreviewMock = vi.fn();
+export const invitationAcceptMock = vi.fn();
 
 vi.mock("quasar", () => ({
   useQuasar: () => ({
@@ -80,6 +87,7 @@ vi.mock("@/stores/clinic", () => ({
     createClinic: vi.fn().mockResolvedValue(undefined),
     fetchMyClinics: vi.fn().mockResolvedValue(undefined),
     activeMemberships: vi.fn().mockReturnValue([]),
+    acceptInvitation: acceptInvitationMock,
     $reset: vi.fn()
   })
 }));
@@ -95,6 +103,14 @@ vi.mock("@/services", () => ({
     clinics: {
       myClinics: myClinicsMock,
       createClinic: createClinicMock
+    },
+    invitations: {
+      list: invitationListMock,
+      create: invitationCreateMock,
+      resend: invitationResendMock,
+      revoke: invitationRevokeMock,
+      preview: invitationPreviewMock,
+      accept: invitationAcceptMock
     }
   }
 }));

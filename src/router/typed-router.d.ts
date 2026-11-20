@@ -45,6 +45,13 @@ declare module 'vue-router/auto-routes' {
       { path: ParamValue<false> },
       | never
     >,
+    '/accept-invite/[token]': RouteRecordInfo<
+      '/accept-invite/[token]',
+      '/accept-invite/:token',
+      { token: ParamValue<true> },
+      { token: ParamValue<false> },
+      | never
+    >,
     '/appointments': RouteRecordInfo<
       '/appointments',
       '/appointments',
@@ -115,6 +122,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/team': RouteRecordInfo<
+      '/team',
+      '/team',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/to-schedule/[token]': RouteRecordInfo<
       '/to-schedule/[token]',
       '/to-schedule/:token',
@@ -150,6 +164,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | 'path'
+    }
+    'src/pages/accept-invite/[token].vue': {
+      routes:
+        | '/accept-invite/[token]'
+      views:
+        | never
+      pathParamNames:
+        | 'token'
     }
     'src/pages/appointments.vue': {
       routes:
@@ -226,6 +248,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/registrations/professionals.vue': {
       routes:
         | '/registrations/professionals'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/team.vue': {
+      routes:
+        | '/team'
       views:
         | never
       pathParamNames:

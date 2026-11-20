@@ -23,10 +23,10 @@ export interface IClinic {
   email?: string | null;
   cnpjf?: string | null;
   phone?: string | null;
-  sitePage?: string | null;
+  site_page?: string | null;
   logo?: string | null;
-  maxUsers?: number | null;
-  subExpiresAt?: string | null;
+  max_users?: number | null;
+  sub_expires_at?: string | null;
 }
 
 export interface IRoleSummary {

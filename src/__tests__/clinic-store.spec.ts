@@ -1,14 +1,15 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MembershipStatus } from "@/interfaces/clinic";
+import { cached } from "@/services/queries";
 
-const { myClinicsMock, selectClinicMock, createClinicMock } = vi.hoisted(
-  () => ({
+const { myClinicsMock, selectClinicMock, createClinicMock, acceptMock } =
+  vi.hoisted(() => ({
     myClinicsMock: vi.fn(),
     selectClinicMock: vi.fn(),
-    createClinicMock: vi.fn()
-  })
-);
+    createClinicMock: vi.fn(),
+    acceptMock: vi.fn()
+  }));
 
 // O setup global mocka o store; aqui usamos o store real.
 vi.mock("@/stores/clinic", async importOriginal => ({
@@ -18,7 +19,8 @@ vi.mock("@/stores/clinic", async importOriginal => ({
 vi.mock("@/services", () => ({
   default: {
     clinics: { myClinics: myClinicsMock, createClinic: createClinicMock },
-    auth: { selectClinic: selectClinicMock }
+    auth: { selectClinic: selectClinicMock },
+    invitations: { accept: acceptMock }
   }
 }));
 
@@ -311,6 +313,104 @@ describe("stores/clinic", () => {
       });
       expect(selectClinicMock).toHaveBeenCalledWith({ membership_id: "m9" });
       expect(store.state.activeContext?.clinic_id).toBe("c9");
+    });
+  });
+
+  describe("acceptInvitation", () => {
+    beforeEach(() => {
+      acceptMock.mockReset();
+      localStorage.setItem("pending-invite-token", "tok");
+    });
+
+    it("aceita o convite, limpa o token pendente e entra na clínica", async () => {
+      acceptMock.mockResolvedValue({
+        clinic: { id: "c1", name: "Clínica X" },
+        membership: { id: "m1", status: "active" },
+        roles: [{ id: "r1", name: "professional" }]
+      });
+      myClinicsMock.mockResolvedValue([membership()]);
+      selectClinicMock.mockResolvedValue({
+        data: {
+          data: {
+            token: "tenant",
+            membership_id: "m1",
+            clinic_id: "c1",
+            clinic: { id: "c1", name: "Clínica X" }
+          }
+        },
+        error: null
+      });
+
+      const store = await loadStore();
+      const target = await store.acceptInvitation("tok");
+
+      expect(acceptMock).toHaveBeenCalledWith("tok");
+      expect(target).toBe("/");
+      expect(localStorage.getItem("pending-invite-token")).toBeNull();
+      expect(store.state.activeContext?.clinic_id).toBe("c1");
+      expect(localStorage.getItem("token")).toBe("tenant");
+    });
+
+    it("mantém o convite pendente quando o aceite falha", async () => {
+      acceptMock.mockRejectedValue(new Error("boom"));
+
+      const store = await loadStore();
+
+      await expect(store.acceptInvitation("tok")).rejects.toThrow("boom");
+      expect(localStorage.getItem("pending-invite-token")).toBe("tok");
+    });
+
+    it("volta para /clinics quando não consegue selecionar o vínculo", async () => {
+      acceptMock.mockResolvedValue({
+        clinic: { id: "c1", name: "Clínica X" },
+        membership: { id: "m1", status: "active" },
+        roles: []
+      });
+      myClinicsMock.mockResolvedValue([membership()]);
+      selectClinicMock.mockResolvedValue({ data: null, error: new Error("x") });
+
+      const store = await loadStore();
+      const target = await store.acceptInvitation("tok");
+
+      expect(target).toBe("/clinics");
+    });
+  });
+
+  describe("cache de consultas", () => {
+    it("limpa o cache ao selecionar uma clínica", async () => {
+      myClinicsMock.mockResolvedValue([membership()]);
+      selectClinicMock.mockResolvedValue({
+        data: {
+          data: {
+            token: "tenant",
+            membership_id: "m1",
+            clinic_id: "c1",
+            clinic: { id: "c1", name: "Clínica X" }
+          }
+        },
+        error: null
+      });
+
+      const fetcher = vi.fn().mockResolvedValue("dado");
+      await cached("cache:select-membership", fetcher);
+
+      const store = await loadStore();
+      await store.fetchMyClinics();
+      await store.selectMembership("m1");
+
+      await cached("cache:select-membership", fetcher);
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
+    it("limpa o cache no reset (logout)", async () => {
+      const fetcher = vi.fn().mockResolvedValue("dado");
+      await cached("cache:reset-store", fetcher);
+
+      const store = await loadStore();
+      store.$reset();
+
+      await cached("cache:reset-store", fetcher);
+      expect(fetcher).toHaveBeenCalledTimes(2);
     });
   });
 });

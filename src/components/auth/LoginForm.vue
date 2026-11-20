@@ -105,6 +105,10 @@ import {
 import services from "@/services";
 import { useUserStore } from "@/stores/user";
 import { useClinicStore } from "@/stores/clinic";
+import {
+  clearPendingInviteToken,
+  readPendingInviteToken
+} from "@/utils/pending-invite";
 
 defineOptions({ name: "LoginForm" });
 
@@ -235,6 +239,31 @@ async function handleSubmit() {
 
       window.localStorage.setItem("token", token);
       userStore.setCurrentUser(data.data);
+
+      // Quem chegou por um link de convite entra direto na clínica que o
+      // concedeu; se o aceite falhar (ex.: e-mail diferente), avisa e segue
+      // no fluxo normal (o link do e-mail continua válido).
+      const pendingInvite = readPendingInviteToken();
+      if (pendingInvite) {
+        try {
+          const inviteTarget =
+            await clinicStore.acceptInvitation(pendingInvite);
+          await router.push(inviteTarget);
+          $q.notify({
+            type: "positive",
+            message: "Convite aceito!",
+            caption: "Bem-vindo(a) à equipe.",
+            timeout: 3000
+          });
+          return;
+        } catch {
+          clearPendingInviteToken();
+          notifyWarning(
+            "Não foi possível aceitar o convite",
+            "Entre com o e-mail convidado ou abra novamente o link do e-mail."
+          );
+        }
+      }
 
       // Fluxo 0/1/n: entra direto se existe um único vínculo ativo; senão
       // vai para /clinics (escolher ou criar).

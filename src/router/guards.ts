@@ -28,11 +28,14 @@ export function resolveNavigationGuard({
   hasClinicContext
 }: NavigationGuardInput): string | undefined {
   const isBookingLink = path.startsWith("/to-schedule/");
+  // O convite é público sem sessão e continua acessível com ela: quem já está
+  // logado ainda pode aceitar o convite do link (inclusive sem clínica ativa).
+  const isInviteAccept = path.startsWith("/accept-invite/");
   const isPublic =
     PUBLIC_PATHS.includes(path) ||
     (!isBookingLink && PUBLIC_PREFIXES.some(prefix => path.startsWith(prefix)));
 
-  if (isBookingLink) {
+  if (isBookingLink || isInviteAccept) {
     return undefined;
   }
 

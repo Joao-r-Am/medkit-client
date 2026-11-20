@@ -126,6 +126,10 @@ import services from "@/services";
 import { EspecialtyAreaList } from "@/interfaces/users";
 import { useUserStore } from "@/stores/user";
 import { useClinicStore } from "@/stores/clinic";
+import {
+  clearPendingInviteToken,
+  readPendingInviteToken
+} from "@/utils/pending-invite";
 
 defineOptions({ name: "CreateAccountForm" });
 
@@ -211,6 +215,33 @@ async function handleSubmit() {
 
     window.localStorage.setItem("token", userData.token);
     userStore.setCurrentUser(userData);
+
+    // Cadastro iniciado por um link de convite: aceita o convite já nesta
+    // sessão e entra na clínica. Se falhar (ex.: e-mail diferente do convite),
+    // avisa e segue para o fluxo padrão de conta sem clínica.
+    const pendingInvite = readPendingInviteToken();
+    if (pendingInvite) {
+      try {
+        const inviteTarget = await clinicStore.acceptInvitation(pendingInvite);
+        await router.push(inviteTarget);
+        $q.notify({
+          type: "positive",
+          message: "Convite aceito!",
+          caption: "Bem-vindo(a) à equipe.",
+          timeout: 3000
+        });
+        emit("created");
+        return true;
+      } catch {
+        clearPendingInviteToken();
+        $q.notify({
+          type: "warning",
+          message: "Não foi possível aceitar o convite",
+          caption: "Abra novamente o link do e-mail para tentar de novo.",
+          timeout: 3500
+        });
+      }
+    }
 
     // Fluxo 0/1/n: conta nova ainda não tem clínica — vai para /clinics,
     // onde o novo usuário (futuro owner) cria a própria clínica.

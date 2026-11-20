@@ -95,6 +95,19 @@
 
           <q-item
             clickable
+            :active="isCurrent('/team')"
+            active-class="app-drawer__item--active"
+            class="app-drawer__item text-white"
+            @click="navigate('/team')"
+          >
+            <q-item-section avatar>
+              <q-icon name="fa-solid fa-user-group" size="1.1rem" />
+            </q-item-section>
+            <q-item-section>Equipe</q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
             :active="isCurrent('/credentials')"
             active-class="app-drawer__item--active"
             class="app-drawer__item text-white"
@@ -252,7 +265,7 @@ const props = withDefaults(
   defineProps<{
     title?: string;
   }>(),
-  { title: "" },
+  { title: "" }
 );
 
 const route = useRoute();
@@ -270,10 +283,10 @@ const isMobile = computed(() => $q.screen.width < MOBILE_BREAKPOINT);
 const sidebarOpen = ref(false);
 watch(
   isMobile,
-  (mobile) => {
+  mobile => {
     sidebarOpen.value = !mobile;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // Trava a altura da página na área visível (mesma fórmula do default do
@@ -293,32 +306,31 @@ const userInitials = computed(() => {
     .filter(Boolean);
   const initials = parts
     .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
+    .map(part => part[0]!.toUpperCase())
     .join("");
   return initials || "?";
 });
 
 const activeClinicName = computed(
-  () =>
-    clinicStore.state.activeContext?.clinic?.name ?? "Nenhuma clínica ativa",
+  () => clinicStore.state.activeContext?.clinic?.name ?? "Nenhuma clínica ativa"
 );
 
 const registrationItems = [
   {
     to: "/registrations/professionals",
     icon: "fa-solid fa-user-doctor",
-    label: "Médicos / Profissionais",
+    label: "Médicos / Profissionais"
   },
   {
     to: "/registrations/procedures",
     icon: "fa-solid fa-syringe",
-    label: "Procedimentos",
+    label: "Procedimentos"
   },
   {
     to: "/registrations/exams",
     icon: "fa-solid fa-microscope",
-    label: "Exames",
-  },
+    label: "Exames"
+  }
 ];
 
 const breadcrumbItems = computed(() => {
@@ -340,7 +352,7 @@ function handleLogout() {
   $q.notify({
     type: "info",
     message: "Sessão encerrada",
-    timeout: 2000,
+    timeout: 2000
   });
   void router.push("/auth");
 }

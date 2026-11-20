@@ -1,8 +1,10 @@
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import services from "../services";
+import { clearCache } from "../services/queries";
 import type { ICreateClinic, IClinic, IMyClinic } from "../interfaces/clinic";
 import { MembershipStatus } from "../interfaces/clinic";
+import { clearPendingInviteToken } from "../utils/pending-invite";
 
 const ACTIVE_CLINIC_KEY = "clinic";
 
@@ -94,6 +96,8 @@ export const useClinicStore = defineStore("clinic", () => {
     }
 
     const selection = data.data;
+    // A troca de clínica muda o escopo de tudo que está em cache.
+    clearCache();
     state.activeContext = {
       membership_id: membershipId,
       clinic_id: selection.clinic_id,
@@ -157,8 +161,26 @@ export const useClinicStore = defineStore("clinic", () => {
     await selectMembership(linked.membership.id);
   }
 
+  /**
+   * Aceita um convite de equipe e entra na clínica concedida.
+   * Devolve a rota de destino ("/" quando consegue selecionar o vínculo).
+   */
+  async function acceptInvitation(token: string): Promise<string> {
+    const accepted = await services.invitations.accept(token);
+    clearPendingInviteToken();
+    clearSelection();
+    await fetchMyClinics(true);
+    try {
+      await selectMembership(accepted.membership.id);
+      return "/";
+    } catch {
+      return "/clinics";
+    }
+  }
+
   /** Limpa o contexto de clínica (troca de sessão/logout). */
   function $reset(): void {
+    clearCache();
     state.memberships = [];
     state.loading = false;
     state.loaded = false;
@@ -176,6 +198,7 @@ export const useClinicStore = defineStore("clinic", () => {
     resolveClinicRoute,
     createClinic,
     linkToClinic,
+    acceptInvitation,
     $reset
   };
 });

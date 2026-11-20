@@ -129,6 +129,7 @@ import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
 import { useClinicStore } from "@/stores/clinic";
 import { IMyClinic, MembershipStatus } from "@/interfaces/clinic";
+import { roleLabel } from "@/utils/roles";
 
 defineOptions({ name: "ClinicMembershipList" });
 
@@ -196,15 +197,5 @@ function statusColor(status: MembershipStatus): string {
   if (status === MembershipStatus.ACTIVE) return "positive";
   if (status === MembershipStatus.SUSPENDED) return "warning";
   return "negative";
-}
-
-function roleLabel(name: string): string {
-  const labels: Record<string, string> = {
-    owner: "Proprietário",
-    admin: "Administrador",
-    professional: "Profissional",
-    operator: "Operador"
-  };
-  return labels[name] ?? name;
 }
 </script>

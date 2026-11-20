@@ -53,6 +53,23 @@ describe("guards/resolveNavigationGuard", () => {
     ).toBeUndefined();
   });
 
+  it("convite de equipe é acessível sem sessão e também com sessão", () => {
+    expect(
+      resolveNavigationGuard({
+        path: "/accept-invite/tok",
+        hasToken: false,
+        hasClinicContext: false
+      })
+    ).toBeUndefined();
+    expect(
+      resolveNavigationGuard({
+        path: "/accept-invite/tok",
+        hasToken: true,
+        hasClinicContext: false
+      })
+    ).toBeUndefined();
+  });
+
   it("rota tenant sem contexto de clínica é barrada para /profile", () => {
     expect(
       resolveNavigationGuard({

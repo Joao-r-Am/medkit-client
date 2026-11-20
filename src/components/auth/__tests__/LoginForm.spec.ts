@@ -7,7 +7,9 @@ import {
   pushMock,
   setCurrentUserMock,
   loginMock,
-  findByCnpjfOrUsernameMock
+  findByCnpjfOrUsernameMock,
+  acceptInvitationMock,
+  resolveClinicRouteMock
 } from "@/__tests__/setup";
 
 function createWrapper() {
@@ -258,6 +260,48 @@ describe("LoginForm", () => {
       expect(pushMock).toHaveBeenCalledWith("/clinics");
 
       resolveClinicRouteMock.mockResolvedValue("/");
+    });
+
+    it("aceita o convite pendente logo após o login", async () => {
+      acceptInvitationMock.mockResolvedValue("/");
+      localStorage.setItem("pending-invite-token", "tok");
+      loginMock.mockResolvedValue({
+        data: { data: { token: "fake-jwt-token", name: "João" } },
+        error: null
+      });
+
+      const wrapper = createWrapper();
+      await advanceToPasswordStep(wrapper);
+      await submitPassword(wrapper);
+      await flushPromises();
+
+      expect(acceptInvitationMock).toHaveBeenCalledWith("tok");
+      expect(resolveClinicRouteMock).not.toHaveBeenCalled();
+      expect(pushMock).toHaveBeenCalledWith("/");
+      wrapper.unmount();
+    });
+
+    it("segue o fluxo normal e descarta o convite se o aceite falhar", async () => {
+      acceptInvitationMock.mockRejectedValueOnce(
+        new Error("INVITATION_EMAIL_MISMATCH")
+      );
+      localStorage.setItem("pending-invite-token", "tok");
+      loginMock.mockResolvedValue({
+        data: { data: { token: "fake-jwt-token", name: "João" } },
+        error: null
+      });
+
+      const wrapper = createWrapper();
+      await advanceToPasswordStep(wrapper);
+      await submitPassword(wrapper);
+      await flushPromises();
+
+      expect(resolveClinicRouteMock).toHaveBeenCalled();
+      expect(localStorage.getItem("pending-invite-token")).toBeNull();
+      expect(notifyMock).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "warning" })
+      );
+      wrapper.unmount();
     });
 
     it("chama setCurrentUser com dados do usuário", async () => {

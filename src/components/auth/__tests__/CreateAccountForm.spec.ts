@@ -7,7 +7,8 @@ import {
   pushMock,
   setCurrentUserMock,
   registerMock,
-  loginMock
+  loginMock,
+  acceptInvitationMock
 } from "@/__tests__/setup";
 
 function createWrapper(props: Record<string, unknown> = {}) {
@@ -219,6 +220,30 @@ describe("CreateAccountForm", () => {
       await flushPromises();
 
       expect(localStorage.getItem("token")).toBe("new-token");
+    });
+
+    it("aceita o convite pendente logo após o cadastro", async () => {
+      acceptInvitationMock.mockResolvedValue("/");
+      localStorage.setItem("pending-invite-token", "tok-reg");
+      registerMock.mockResolvedValue({
+        data: { data: { token: "new-token" } },
+        error: null
+      });
+
+      const wrapper = createWrapper();
+      await fillAllFields(wrapper);
+      await wrapper.find("form").trigger("submit");
+      await flushPromises();
+
+      expect(acceptInvitationMock).toHaveBeenCalledWith("tok-reg");
+      expect(pushMock).toHaveBeenCalledWith("/");
+      expect(notifyMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "positive",
+          message: "Convite aceito!"
+        })
+      );
+      wrapper.unmount();
     });
 
     it("chama setCurrentUser com dados do usuário", async () => {
